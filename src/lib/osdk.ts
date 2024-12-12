@@ -5,8 +5,8 @@ import {
   semanticSearchTrialData, 
   semanticSearchDemoLogic 
 } from "@legal-document-analysis/sdk";
-import { Osdk, PageResult, Result  } from "@osdk/client";
-import { QueryParam, ObjectSet } from "@osdk/api";
+//import { Osdk, PageResult, Result  } from "@osdk/client";
+import { ObjectSet } from "@osdk/api";
 import client from "./client";
 
 const debug = () => {
@@ -17,6 +17,7 @@ const debug = () => {
     }
 }
 
+/*
 const getDocumentsListOld = async () : Promise<Osdk.Instance<SemanticExDocument>[]> => {
     
     console.log('getDocuments');
@@ -26,7 +27,7 @@ const getDocumentsListOld = async () : Promise<Osdk.Instance<SemanticExDocument>
       return response.value?.data.filter(Boolean);
     }
     return [];
-};
+};*/
 
 //"20230918-APM-BT5-PM-PUBLIC-Google.pdf"
 const generateQuestions = async (filename: string) => {

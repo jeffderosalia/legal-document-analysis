@@ -2,10 +2,10 @@ import React, { useState, useEffect } from 'react';
 import "./DocumentChat.css";
 import { ChevronRight, File, Folder, Send } from 'lucide-react';
 import { Document, Message } from './types';
-import {getDocumentsList, sendChat, askTrialData} from './lib/Osdk'
-import { Osdk, PageResult, Result  } from "@osdk/client";
+import {getDocumentsList, askTrialData} from './lib/osdk'
+import { Osdk } from "@osdk/client";
 import { SemanticExDocument } from "@legal-document-analysis/sdk";
-import { QueryParam, ObjectSet } from "@osdk/api";
+import { ObjectSet } from "@osdk/api";
 
 const DocumentChat: React.FC = () => {
   const [selectedDocs, setSelectedDocs] = useState<string[]>([]);

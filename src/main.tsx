@@ -1,7 +1,7 @@
 import ReactDOM from "react-dom/client";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import AuthCallback from "./AuthCallback";
-import Home from "./Home";
+//import Home from "./Home";
 import DocumentChat from "./DocumentChat";
 import "./index.css";
 
