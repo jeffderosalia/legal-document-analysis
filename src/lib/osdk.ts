@@ -60,11 +60,12 @@ const getDocumentsList = async () : Promise<ObjectSet<SemanticExDocument>> => {
   return await client(SemanticExDocument);
 };
 
-const askTrialData = async (question: string, subject: string, callback: sendChatCB) =>  {
+const askTrialData = async (question: string, subject: string, history: any[] , callback: sendChatCB) =>  {
   console.log('askTrialData');
   const result = await client(semanticSearchTrialData).executeFunction({
     "question": question,
-    "subject": subject
+    "subject": subject,
+    "history": history
   });
   callback(result);
 };

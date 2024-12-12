@@ -100,7 +100,7 @@ const DocumentChat: React.FC = () => {
       mediaItemRid: { $in: selectedDocs }
     });
     if (objectSet != null) {
-      askTrialData(inputValue.trim(), '', sendChatCB);
+      askTrialData(inputValue.trim(), '', messages, sendChatCB);
     }
     setMessages(prev => [...prev, 
       { type: 'user', content: inputValue }
