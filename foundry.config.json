@@ -1,0 +1,11 @@
+{
+  "foundryUrl": "https://stewardshipped-jsd.usw-3.palantirfoundry.com",
+  "site": {
+    "application": "ri.third-party-applications.main.application.81c46cfd-b342-4cb3-9530-7cc0a65d09e5",
+    "directory": "./dist",
+    "autoVersion": {
+      "type": "git-describe",
+      "tagPrefix": ""
+    }
+  }
+}
