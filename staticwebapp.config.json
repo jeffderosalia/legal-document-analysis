@@ -1,14 +1,1 @@
-{
-  "routes": [
-    {
-      "route": "/auth/callback",
-      "methods": [
-        "post",
-        "get"
-      ],
-      "allowedRoles": [
-        "anonymous"
-      ]
-    }
-  ]
-}
+{}
