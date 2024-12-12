@@ -3,14 +3,6 @@
     {
       "route": "/auth/callback",
       "rewrite": "/index.html"
-    },
-    {
-      "route": "/",
-      "methods": [
-        "get"
-      ],
-      "rewrite": "/index.html",
-      "statusCode": 200
     }
   ]
 }
