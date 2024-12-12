@@ -5,10 +5,8 @@ import { defineConfig } from "vite";
 export default defineConfig(({ mode }) => {  
   return {
     plugins: [react()],
-    server: {
-      port: 8080,
-    },
     define: {
+      'process.env': process.env,
       "process.env.NODE_ENV": JSON.stringify(mode),
     },
   };
