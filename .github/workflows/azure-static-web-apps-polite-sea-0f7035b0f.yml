@@ -15,7 +15,7 @@ jobs:
     runs-on: ubuntu-latest
     name: Build and Deploy Job
     env:
-      FOUNDRY_TOKEN: ${{ secrets.FOUNDRY_TOKEN }}
+      FOUNDRY_TOKEN: ${{ secrets.FOUNDRY_TOKEN }} 
     steps:
       - uses: actions/checkout@v3
         with:
