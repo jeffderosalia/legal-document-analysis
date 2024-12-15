@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import "./DocumentChat.css";
 import { ChevronRight, File, Folder, Send } from 'lucide-react';
 import { Document, Message } from './types';
+import Markdown from 'react-markdown';
 import {getDocumentsList, askTrialData} from './lib/osdk'
 import { Osdk } from "@osdk/client";
 import { SemanticExDocument } from "@legal-document-analysis/sdk";
@@ -170,9 +171,10 @@ const DocumentChat: React.FC = () => {
               key={index}
               className={`message-wrapper ${message.type}`}
             >
-              <div className="message">
+              <Markdown className="message">{message.content}</Markdown>
+              {/* <div className="message">
                 {message.content}
-              </div>
+              </div> */}
             </div>
           ))}
         </div>
