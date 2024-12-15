@@ -164,6 +164,7 @@ const DocumentChat: React.FC = () => {
         <div className="header">
           <h2>Selected Documents: {selectedDocs.length}</h2>
         </div>
+
         <div className="messages-container">
           {messages.map((message, index) => (
             <div
