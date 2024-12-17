@@ -21,7 +21,7 @@ const DocumentChat: React.FC = () => {
 
   const provider = 'openai';
   const model = 'gpt-4o-mini';
-  const apiKey = process.env.VITE_OPENAI_API_KEY || 'iamnotgonnawork';
+  const apiKey = process.env.VITE_IANEOP || 'iamnotgonnawork';
 
   /*
   useEffect(() => {
@@ -63,11 +63,11 @@ const DocumentChat: React.FC = () => {
     //       { id: 'proj2', name: 'Team Structure', type: 'file' },
     //     ]
     //   },
-      { id: 'notes', name: 'Taylor Transcripts', type: 'file' },
-      { id: 'notes', name: 'Roach Transcripts', type: 'file' },
-      { id: 'notes', name: 'Bagnell Transcripts', type: 'file' },
-      { id: 'notes', name: 'Ferraiuolo Transcripts', type: 'file' },
-      { id: 'notes', name: 'Santana Transcripts', type: 'file' },
+      { id: 'notes1', name: 'Taylor Transcripts', type: 'file' },
+      { id: 'notes2', name: 'Roach Transcripts', type: 'file' },
+      { id: 'notes3', name: 'Bagnell Transcripts', type: 'file' },
+      { id: 'notes4', name: 'Ferraiuolo Transcripts', type: 'file' },
+      { id: 'notes5', name: 'Santana Transcripts', type: 'file' },
     ]
   };
 

@@ -11,7 +11,7 @@ export default defineConfig(({ mode }) => {
       'process.env.VITE_FOUNDRY_API_URL': JSON.stringify(env.VITE_FOUNDRY_API_URL),
       'process.env.VITE_FOUNDRY_CLIENT_ID': JSON.stringify(env.VITE_FOUNDRY_CLIENT_ID),
       'process.env.VITE_FOUNDRY_REDIRECT_URL': JSON.stringify(env.VITE_FOUNDRY_REDIRECT_URL),
-      'process.env.VITE_OPENAI_API_KEY': JSON.stringify(env.VITE_OPENAI_API_KEY),
+      'process.env.VITE_IANEOP': JSON.stringify(env.VITE_IANEOP),
      },
   };
 });
