@@ -1,21 +1,29 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import "./DocumentChat.css";
 import { ChevronRight, File, Folder, Send } from 'lucide-react';
 import { Document, Message } from './types';
-import Markdown from 'react-markdown';
-import {getDocumentsList, askTrialData} from './lib/osdk'
-import { Osdk } from "@osdk/client";
-import { SemanticExDocument } from "@legal-document-analysis/sdk";
-import { ObjectSet } from "@osdk/api";
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+import {askTrialDataRAG} from './lib/osdk'
+// import { Osdk } from "@osdk/client";
+// import { SemanticExDocument } from "@legal-document-analysis/sdk";
+// import { ObjectSet } from "@osdk/api";
+//import {processDocument} from './lib/openai.ts'
+import {chat} from './lib/llmclient';
 
 const DocumentChat: React.FC = () => {
   const [selectedDocs, setSelectedDocs] = useState<string[]>([]);
   const [expandedFolders, setExpandedFolders] = useState<string[]>(['projects', 'marketing']);
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputValue, setInputValue] = useState('');
-  const [rawdocuments, setRawdocuments] = useState<ObjectSet<SemanticExDocument>>();
-  const [documents, setDocuments] = useState<Document>();
+//  const [rawdocuments, setRawdocuments] = useState<ObjectSet<SemanticExDocument>>();
+//  const [documents, setDocuments] = useState<Document>();
 
+  const provider = 'openai';
+  const model = 'gpt-4o-mini';
+  const apiKey = import.meta.env.VITE_OPENAI_API_KEY;
+
+  /*
   useEffect(() => {
     const fetchDocuments = async () => {
       const docList: ObjectSet<SemanticExDocument> = await getDocumentsList();
@@ -39,37 +47,29 @@ const DocumentChat: React.FC = () => {
       setDocuments(documents);
     };
     fetchDocuments();
-  }, []);
+  }, []);*/
 
-
-  /*
   const documents: Document = {
     id: 'root',
-    name: 'Documents',
+    name: 'Document Collections',
     type: 'folder',
     children: [
-      {
-        id: 'projects',
-        name: 'Projects',
-        type: 'folder',
-        children: [
-          { id: 'proj1', name: 'Q1 Planning', type: 'file' },
-          { id: 'proj2', name: 'Team Structure', type: 'file' },
-        ]
-      },
-      {
-        id: 'marketing',
-        name: 'Marketing',
-        type: 'folder',
-        children: [
-          { id: 'mkt1', name: 'Campaign Overview', type: 'file' },
-          { id: 'mkt2', name: 'Budget 2024', type: 'file' },
-        ]
-      },
-      { id: 'notes', name: 'Quick Notes', type: 'file' },
+    //   {
+    //     id: 'projects',
+    //     name: 'Projects',
+    //     type: 'folder',
+    //     children: [
+    //       { id: 'proj1', name: 'Q1 Planning', type: 'file' },
+    //       { id: 'proj2', name: 'Team Structure', type: 'file' },
+    //     ]
+    //   },
+      { id: 'notes', name: 'Taylor Transcripts', type: 'file' },
+      { id: 'notes', name: 'Roach Transcripts', type: 'file' },
+      { id: 'notes', name: 'Bagnell Transcripts', type: 'file' },
+      { id: 'notes', name: 'Ferraiuolo Transcripts', type: 'file' },
+      { id: 'notes', name: 'Santana Transcripts', type: 'file' },
     ]
   };
-  */
 
   const toggleFolder = (folderId: string): void => {
     setExpandedFolders(prev => 
@@ -86,10 +86,32 @@ const DocumentChat: React.FC = () => {
         : [...prev, docId]
     );
   };
-  const sendChatCB = (data: string) => {
+  const sendChatCB = async (messages: any[]) => {
     console.log('sendChatCB')
+    console.log(messages);
+    const allMessages = [
+      {"role": "system", "content": "Create all tables using markdown"},
+      ...messages,
+    ]
+
+    let fullResponse = '';
+    await chat(
+      provider,
+      model,
+      allMessages,
+      apiKey,
+      {
+        streaming: true,
+        onToken: (token) => {
+          fullResponse += token;
+        }
+      }
+    );
+    fullResponse = fullResponse.replace(/```(?:\w+)?\n([\s\S]*?)```/g, '$1').trim();
+    console.log(fullResponse);
+
     setMessages(prev => [...prev, 
-      { type: 'assistant', content: data }
+      { type: 'assistant', content: fullResponse }
     ]);
   };
 
@@ -97,12 +119,12 @@ const DocumentChat: React.FC = () => {
     if (!inputValue.trim()) return;
   
     //const docs = rawdocuments?.where() (doc => selectedDocs.includes(doc.mediaItemRid));
-    const objectSet = rawdocuments?.where({
-      mediaItemRid: { $in: selectedDocs }
-    });
-    if (objectSet != null) {
-      askTrialData(inputValue.trim(), '', messages, sendChatCB);
-    }
+    // const objectSet = rawdocuments?.where({
+    //   mediaItemRid: { $in: selectedDocs }
+    // });
+    //if (objectSet != null) {
+    askTrialDataRAG(inputValue.trim(), messages, sendChatCB);
+    //}
     setMessages(prev => [...prev, 
       { type: 'user', content: inputValue }
     ]);
@@ -162,7 +184,7 @@ const DocumentChat: React.FC = () => {
 
       <div className="main-content">
         <div className="header">
-          <h2>Selected Documents: {selectedDocs.length}</h2>
+          <h2>Selected Collections: {selectedDocs.length}</h2>
         </div>
 
         <div className="messages-container">
@@ -171,7 +193,7 @@ const DocumentChat: React.FC = () => {
               key={index}
               className={`message-wrapper ${message.type}`}
             >
-              <Markdown className="message">{message.content}</Markdown>
+              <ReactMarkdown remarkPlugins={[remarkGfm]} className="message">{message.content}</ReactMarkdown>
               {/* <div className="message">
                 {message.content}
               </div> */}

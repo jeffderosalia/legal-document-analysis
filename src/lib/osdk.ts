@@ -3,7 +3,8 @@ import {
   generateQuestionsFromFileContains, 
   SemanticExDocument, 
   semanticSearchTrialData, 
-  semanticSearchDemoLogic 
+  semanticSearchDemoLogic,
+  semanticSearchGeneratePrompt
 } from "@legal-document-analysis/sdk";
 //import { Osdk, PageResult, Result  } from "@osdk/client";
 import { ObjectSet } from "@osdk/api";
@@ -38,7 +39,6 @@ const generateQuestions = async (filename: string) => {
     console.log(result);
     return result;
 };
-type sendChatCB = (n: string) => any;
 
 //"20230918-APM-BT5-PM-PUBLIC-Google.pdf"
 const sendChat = async (question: string, documents: ObjectSet<SemanticExDocument>, callback: sendChatCB) => {
@@ -60,6 +60,7 @@ const getDocumentsList = async () : Promise<ObjectSet<SemanticExDocument>> => {
   return await client(SemanticExDocument);
 };
 
+type sendChatCB = (n: string) => any;
 const askTrialData = async (question: string, subject: string, history: any[] , callback: sendChatCB) =>  {
   console.log('askTrialData');
   const result = await client(semanticSearchTrialData).executeFunction({
@@ -70,4 +71,13 @@ const askTrialData = async (question: string, subject: string, history: any[] , 
   callback(result);
 };
 
-export {getDocumentsList, generateQuestions, askTrialData, sendChat, debug};
+type askTrialDataRAGCB = (n: any[]) => any;
+const askTrialDataRAG = async (question: string, history: any[] , callback: askTrialDataRAGCB) =>  {
+  console.log('askTrialDataRAG');
+  const result = await client(semanticSearchGeneratePrompt).executeFunction({
+    "question": question,
+    "history": history
+  });
+  callback(result);
+};
+export {getDocumentsList, askTrialDataRAG, generateQuestions, askTrialData, sendChat, debug};
