@@ -21,7 +21,7 @@ const DocumentChat: React.FC = () => {
 
   const provider = 'openai';
   const model = 'gpt-4o-mini';
-  const apiKey = process.env.VITE_IANEOP || 'iamnotgonnawork';
+  const apiKey = process.env.VITE_OPENAI_API_KEY || 'iamnotgonnawork';
 
   /*
   useEffect(() => {
