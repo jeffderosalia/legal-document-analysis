@@ -9,6 +9,7 @@ import {
 //import { Osdk, PageResult, Result  } from "@osdk/client";
 import { ObjectSet } from "@osdk/api";
 import client from "./client";
+import { OSDKMessage } from "../types";
 
 const debug = () => {
     return {
@@ -72,7 +73,7 @@ const askTrialData = async (question: string, subject: string, history: any[] , 
 };
 
 type askTrialDataRAGCB = (n: any[]) => any;
-const askTrialDataRAG = async (question: string, history: any[] , callback: askTrialDataRAGCB) =>  {
+const askTrialDataRAG = async (question: string, history: OSDKMessage[] , callback: askTrialDataRAGCB) =>  {
   console.log('askTrialDataRAG');
   const result = await client(semanticSearchGeneratePrompt).executeFunction({
     "question": question,

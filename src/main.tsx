@@ -2,7 +2,7 @@ import ReactDOM from "react-dom/client";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import AuthCallback from "./AuthCallback";
 //import Home from "./Home";
-import DocumentChat from "./DocumentChat";
+import DocumentChat from "./pages/DocumentChat";
 import "./index.css";
 
 const router = createBrowserRouter(

@@ -16,6 +16,7 @@ jobs:
     name: Build and Deploy Job
     env:
       VITE_OPENAI_API_KEY: ${{ secrets.VITE_OPENAI_API_KEY }}
+      VITE_ANTHROPIC_API_KEY: ${{ secrets.VITE_ANTHROPIC_API_KEY }}
       FOUNDRY_TOKEN: ${{ secrets.FOUNDRY_TOKEN }} 
     steps:
       - uses: actions/checkout@v3

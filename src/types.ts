@@ -1,15 +1,38 @@
 export interface Document {
-    id: string;
-    name: string;
-    type: 'file' | 'folder';
-    children?: Document[];
-  }
+  id: string;
+  name: string;
+  type: 'file' | 'folder';
+  children?: Document[];
+}
+
+export interface DocumentNode extends Document {
+  children: DocumentNode[];
+}
+export type Provider = "openai" | "anthropic";
+export type StreamingCallback = (token: string) => void;
+export type MessageRole = "system" | "user" | "assistant";
+
+export interface OSDKMessage {
+  type: MessageRole;
+  content: string;
+}
+
+export interface Message {
+  role: MessageRole;
+  content: string;
+  provider?: string;
+}
+
+export interface MessageGroup {
+  groupId?: string; 
+  question: Message;
+  answers: Message[];
+  started?: Boolean
+}
+
+export interface ChatOptions {
+  streaming?: boolean;
+  temperature?: number;
+  onToken?: StreamingCallback;
+}
   
-  export interface Message {
-    type: 'user' | 'assistant';
-    content: string;
-  }
-  
-  export interface DocumentNode extends Document {
-    children: DocumentNode[];
-  }

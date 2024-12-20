@@ -7,21 +7,7 @@ import {
   BaseMessage 
 } from "@langchain/core/messages";
 import { BaseCallbackHandler } from "@langchain/core/callbacks/base";
-
-type Provider = "openai" | "anthropic";
-type StreamingCallback = (token: string) => void;
-type MessageRole = "system" | "user" | "assistant";
-
-interface Message {
-  role: MessageRole;
-  content: string;
-}
-
-interface ChatOptions {
-  streaming?: boolean;
-  temperature?: number;
-  onToken?: StreamingCallback;
-}
+import { StreamingCallback, Provider, Message, ChatOptions  } from "../types";
 
 // Streaming handler class
 class StreamingHandler extends BaseCallbackHandler {
