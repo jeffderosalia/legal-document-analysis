@@ -5,7 +5,7 @@ import {
 } from "@legal-document-analysis/sdk";
 import { Osdk  } from "@osdk/client";
 import client from "./client";
-import { Params } from "react-router-dom";
+//import { Params } from "react-router-dom";
 
 type tCreateFileCollection = {
   collection_name: string;

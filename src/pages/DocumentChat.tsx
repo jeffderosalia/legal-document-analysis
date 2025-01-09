@@ -5,11 +5,11 @@ import { ChatDisplay } from '../components/ChatDisplay';
 import { ChatInput } from '../components/ChatInput';
 import {CreateCollectionModal} from '../components/CreateCollectionModal'
 import { askTrialDataRAG, getAllDocuments } from '../lib/osdk';
-import { createCollection, getFileCollection, deleteCollection } from '../lib/osdkCollections';
+import { createCollection, getFileCollection } from '../lib/osdkCollections';
 import { chat } from '../lib/llmclient';
 import { Document, Message, Provider, MessageGroup, OSDKMessage } from '../types';
-import { Osdk  } from "@osdk/client";
-import { FileCollection } from "@legal-document-analysis/sdk";
+// import { Osdk  } from "@osdk/client";
+// import { FileCollection } from "@legal-document-analysis/sdk";
 import Header from '../components/Header'
 
 type UIProvider = {
@@ -22,7 +22,7 @@ type UIProvider = {
 }
 
 const DocumentChat: React.FC = () => {
-  const [collections, setCollections] = useState<Osdk.Instance<FileCollection>[]>();
+//  const [collections, setCollections] = useState<Osdk.Instance<FileCollection>[]>();
   const [documents, setDocuments] = useState<Document>();
   const [selectedDocs, setSelectedDocs] = useState<Document[]>([]);
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
@@ -52,13 +52,14 @@ const DocumentChat: React.FC = () => {
   }, [messages, loadingLLM]);
   useEffect(() => {
     const fetchDocuments = async () => {
+      const docs = await getAllDocuments();
+/*
       const [colls, docs] = await Promise.all(
         [getFileCollection(),getAllDocuments()]
       );
       setCollections(colls);
       const collIds = colls.map(m=> m.fileRid);
       const orphanedFiles = docs.children?.filter(m=> !collIds.includes(m.id))
-/*
       Object.values(
         colls.reduce((acc, curr) => ({
           ...acc,
