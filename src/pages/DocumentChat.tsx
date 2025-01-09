@@ -3,9 +3,14 @@ import "./DocumentChat.css";
 import { ChevronRight, File, Folder } from 'lucide-react';
 import { ChatDisplay } from '../components/ChatDisplay';
 import { ChatInput } from '../components/ChatInput';
-import { askTrialDataRAG } from '../lib/osdk';
+import {CreateCollectionModal} from '../components/CreateCollectionModal'
+import { askTrialDataRAG, getAllDocuments } from '../lib/osdk';
+import { createCollection, getFileCollection, deleteCollection } from '../lib/osdkCollections';
 import { chat } from '../lib/llmclient';
 import { Document, Message, Provider, MessageGroup, OSDKMessage } from '../types';
+import { Osdk  } from "@osdk/client";
+import { FileCollection } from "@legal-document-analysis/sdk";
+import Header from '../components/Header'
 
 type UIProvider = {
   id: 'chatgpt' | 'anthropic';
@@ -17,7 +22,10 @@ type UIProvider = {
 }
 
 const DocumentChat: React.FC = () => {
-  const [selectedDocs, setSelectedDocs] = useState<string[]>([]);
+  const [collections, setCollections] = useState<Osdk.Instance<FileCollection>[]>();
+  const [documents, setDocuments] = useState<Document>();
+  const [selectedDocs, setSelectedDocs] = useState<Document[]>([]);
+  const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const [expandedFolders, setExpandedFolders] = useState<string[]>(['projects', 'marketing']);
   const [loadingLLM, setLoadingLLM] = useState<Boolean>(false);
   const [messages, setMessages] = useState<MessageGroup[]>([]);
@@ -42,19 +50,34 @@ const DocumentChat: React.FC = () => {
       askTrialDataRAG(messages[messages.length - 1].question.content, history, sendChatCB);
     }
   }, [messages, loadingLLM]);
+  useEffect(() => {
+    const fetchDocuments = async () => {
+      const [colls, docs] = await Promise.all(
+        [getFileCollection(),getAllDocuments()]
+      );
+      setCollections(colls);
+      const collIds = colls.map(m=> m.fileRid);
+      const orphanedFiles = docs.children?.filter(m=> !collIds.includes(m.id))
+/*
+      Object.values(
+        colls.reduce((acc, curr) => ({
+          ...acc,
+          [curr.collectionName||'']: {
+            id: curr.collectionId,
+            name: curr.collectionName,
+            type: 'folder' as const,
+            children: [...(acc[curr.collectionName].children || []), {
+              id: curr.fileRid,
+              name: curr.collectionName,
+              type: 'file' as const
+            }]
+          }
+        }), {})*/
 
-  const documents: Document = {
-    id: 'root',
-    name: 'Document Collections',
-    type: 'folder',
-    children: [
-      { id: 'notes1', name: 'Taylor Transcripts', type: 'file' },
-      { id: 'notes2', name: 'Roach Transcripts', type: 'file' },
-      { id: 'notes3', name: 'Bagnell Transcripts', type: 'file' },
-      { id: 'notes4', name: 'Ferraiuolo Transcripts', type: 'file' },
-      { id: 'notes5', name: 'Santana Transcripts', type: 'file' },
-    ]
-  };
+      setDocuments(docs);
+    };
+    fetchDocuments();
+}, []);
 
   const toggleFolder = (folderId: string): void => {
     setExpandedFolders(prev => 
@@ -64,11 +87,12 @@ const DocumentChat: React.FC = () => {
     );
   };
 
-  const toggleDocument = (docId: string): void => {
+  const toggleDocument = (doc: Document): void => {
+    console.log(selectedDocs);
     setSelectedDocs(prev =>
-      prev.includes(docId)
-        ? prev.filter(id => id !== docId)
-        : [...prev, docId]
+      prev.find(m=> m.id == doc.id) === undefined
+        ? [...prev, doc]
+        : prev.filter(docx => docx.id !== doc.id)
     );
   };
 
@@ -98,6 +122,32 @@ const DocumentChat: React.FC = () => {
     }));
   }, [providers, messages]);;
 
+  /*
+  useEffect(() => {
+    const create = async () => {
+      const fc = await getFileCollection()
+      console.log('fc');
+      setCollections(fc);
+      fc.map(m=> console.log(m.$primaryKey + ' ' +  m.collectionName + " " + m.fileRid))
+      //await deleteCollection(fc);
+    };
+    create();
+  }, [])*/
+
+  const handleCreateCollection =  (collectioninfo: any) => {
+    console.log(collectioninfo);
+    const create = async () => {
+      const collection = collectioninfo.documents.map((m: Document)=> ({
+        collection_name: collectioninfo.name,
+        file_rid: m.id
+      }))
+      await createCollection(collection);
+
+      console.log('isdone', await getFileCollection())
+    };
+    create();
+  };
+
   const handleSendMessage = (message: string): void => {
     setQuestionCount(prev => prev + 1);
     const answers: Message[] = providers.filter(m=> m.enabled).map(m => ({role: 'assistant', content: '', provider: m.name}))
@@ -111,7 +161,7 @@ const DocumentChat: React.FC = () => {
   const renderItem = (item: Document, depth: number = 0): React.ReactNode => {
     const isFolder = item.type === 'folder';
     const isExpanded = expandedFolders.includes(item.id);
-    const isSelected = selectedDocs.includes(item.id);
+    const isSelected = selectedDocs.find(m => m.id === item.id) !== undefined;
 
     return (
       <div key={item.id}>
@@ -129,7 +179,7 @@ const DocumentChat: React.FC = () => {
               <input
                 type="checkbox"
                 checked={isSelected}
-                onChange={() => toggleDocument(item.id)}
+                onChange={() => toggleDocument(item)}
               />
             </div>
           )}
@@ -149,9 +199,19 @@ const DocumentChat: React.FC = () => {
 
   return (
     <div className="app-container">
-      <div className="sidebar">
-        <div className="sidebar-header">Selected Collections: {selectedDocs.length}</div>
+      <div className="sidebar">        
+        <div className="sidebar-header">
+          <button onClick={() => setIsModalOpen(true)}>Create Collection</button>
+        </div>
+        <CreateCollectionModal
+          isOpen={isModalOpen}
+          onClose={() => setIsModalOpen(false)}
+          documents={selectedDocs}
+          onCreateCollection={handleCreateCollection}
+        />
+        <section className="collections-container">
         {documents && documents.children?.map(item => renderItem(item))}
+        </section>
         <div className="provider-options">
           <h5>Select your Providers</h5>
           {providers.map(provider => (
@@ -170,11 +230,7 @@ const DocumentChat: React.FC = () => {
       </div>
 
       <div className="main-content">
-        <div className="header">
-          <h1>Legal Document Analysis</h1>
-          <h2>Selected Collections: {selectedDocs.length}</h2>
-        </div>
-
+        <Header />
         <ChatDisplay messages={messages} />
         <ChatInput onSendMessage={handleSendMessage} />
       </div>

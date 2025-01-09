@@ -1,0 +1,45 @@
+.message-wrapper .message {
+    text-align: left;
+    max-width: calc(80% - 24px);
+    min-width: 40%;
+    min-height: 29px;
+    padding: 12px;
+    border-radius: 8px;
+    border: 1px solid #e5e5e5;
+    padding: 12px; 
+    position: relative;
+  }
+  
+  /* Right align user messages */
+  .message-wrapper.user {
+    justify-content: flex-end;
+  }
+  .message-wrapper.user .message {
+    background: #374151;
+    color: #D1D5DB;
+    border: none;
+  }
+  .message-wrapper.assistant .message {
+    background: #374151;
+    background: #3B82F6;
+    color: #FFF;
+  }
+  /* Left align assistant messages */
+  .message-wrapper.assistant {
+    justify-content: flex-start;
+  }
+  
+  /* When message-wrapper has two messages, place them side by side */
+  .message-wrapper:has(.message + .message) .message {
+    width: 48%;
+  }
+  .message .provider {
+    position: absolute;
+    bottom: 1px;
+    right: 1px;
+    font-size: 0.75rem;
+    background-color: #111827;;
+    padding:3px 3px 0 3px;
+    border-radius: 5px;
+    opacity: .8;
+  }

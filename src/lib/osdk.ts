@@ -2,6 +2,7 @@ import {
   $Objects, $Actions, $Queries, 
   generateQuestionsFromFileContains, 
   SemanticExDocument, 
+  EmbeddedTrialDataChunkV2,
   semanticSearchTrialData, 
   semanticSearchDemoLogic,
   semanticSearchGeneratePrompt
@@ -9,7 +10,7 @@ import {
 //import { Osdk, PageResult, Result  } from "@osdk/client";
 import { ObjectSet } from "@osdk/api";
 import client from "./client";
-import { OSDKMessage } from "../types";
+import { OSDKMessage, Document } from "../types";
 
 const debug = () => {
     return {
@@ -81,4 +82,31 @@ const askTrialDataRAG = async (question: string, history: OSDKMessage[] , callba
   });
   callback(result);
 };
-export {getDocumentsList, askTrialDataRAG, generateQuestions, askTrialData, sendChat, debug};
+
+const getAllDocuments = async () : Promise<Document>  =>  {
+  const sortByPath = (a: Document, b: Document): number => {
+    return a.name.localeCompare(b.name);
+  };
+  const result = await client(EmbeddedTrialDataChunkV2)
+      .aggregate({
+          $select: {  $count: "unordered"  },
+          $groupBy: { mediaItemRid : "exact", "path": "exact" }
+      });
+  const items: Document[] = result.map(item => ({
+    id: item.$group.mediaItemRid || '',
+    name: item.$group.path || '' ,
+    type: 'file',
+  }));
+  const sortedItems: Document[] = items.sort(sortByPath);
+
+  const transformedArray: Document = {
+    id: 'root',
+    name: 'Document Collections',
+    type: 'folder',
+    children: sortedItems
+  };
+  return transformedArray;  
+};
+
+
+export {getAllDocuments, getDocumentsList, askTrialDataRAG, generateQuestions, askTrialData, sendChat, debug};

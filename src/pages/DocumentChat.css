@@ -12,13 +12,16 @@
 
 .sidebar {
   width: 256px;
-  background: white;
-  border-right: 1px solid #e5e5e5;
+  background: #1F2937;
+  color: #ccc;
+  border-right: 1px solid #374151;
   padding: 16px;
   overflow-y: auto;
   display: flex;
   flex-direction: column;
   flex-shrink: 0;
+  font-size: 14px;
+  text-align: left;
 }
 
 .sidebar-header {
@@ -47,13 +50,8 @@
   border-radius: 4px;
   cursor: pointer;
 }
-
-.tree-item:hover {
-  background: #f0f0f0;
-}
-
-.tree-item.selected {
-  background: #e6f0ff;
+.sidebar .collections-container {
+  overflow-y: auto;
 }
 
 .chevron {
@@ -77,15 +75,15 @@ input[type="checkbox"] {
   height: 16px;
   appearance: none;
   -webkit-appearance: none;
-  border: 1px solid #ccc;
+  border: 1px solid #60A5FA;
   border-radius: 3px;
   background: white;
   cursor: pointer;
 }
 
 input[type="checkbox"]:checked {
-  background: #0066ff;
-  border-color: #0066ff;
+  background: #60A5FA;
+  border-color: #60A5FA;
   position: relative;
 }
 
@@ -103,12 +101,6 @@ input[type="checkbox"]:checked::after {
   height: 16px;
   margin-right: 8px;
   color: #666;
-}
-
-.item-name {
-  font-size: 14px;
-  color: #333;
-  text-align: left;
 }
 
 .main-content {
@@ -133,42 +125,15 @@ input[type="checkbox"]:checked::after {
 h5 {
   margin:0;
 }
-/*
-.messages-container {
-  flex: 1;
-  overflow-y: auto;
-  padding: 16px;
-  display: flex;
-  flex-direction: column;
-}
-
-.message-wrapper {
-  display: flex;
-  margin-bottom: 16px;
-  flex-direction: column;
-}
-
-.message-wrapper.user {
-  align-self: flex-end;
-}
-.message-wrapper.panels-2 {
-  display: inline-flex;
-  gap: 1rem;
-}
-
- .message-wrapper.user .message {
-  background: darkviolet;
-  color: white;
-  border: none;
-}*/
 
 .messages-container {
-  width: 100%;
+  background-color: #111827;
+  width: 99%;
   height: 100%;
   display: flex;
   flex-direction: column;
   justify-content: flex-start;
-  padding: 20px 0;
+  padding: 20px 5px;
   gap: 20px;
   overflow-y: auto;
 }
@@ -177,44 +142,6 @@ h5 {
   display: flex;
   width: 100%;
   gap: 1rem;
-}
-
-.message-wrapper .message {
-  text-align: left;
-  max-width: calc(80% - 24px);
-  min-width: 40%;
-  padding: 12px;
-  border-radius: 8px;
-  background: white;
-  border: 1px solid #e5e5e5;
-  padding: 12px; 
-  position: relative;
-}
-
-/* Right align user messages */
-.message-wrapper.user {
-  justify-content: flex-end;
-}
-.message-wrapper.user .message {
-  background: darkviolet;
-  color: white;
-  border: none;
-}
-/* Left align assistant messages */
-.message-wrapper.assistant {
-  justify-content: flex-start;
-}
-
-/* When message-wrapper has two messages, place them side by side */
-.message-wrapper:has(.message + .message) .message {
-  width: 48%;
-}
-.message .provider {
-  position: absolute;
-  bottom: 4px;
-  right: 4px;
-  font-size: 0.75rem;
-  color: #666;
 }
 
 .chat-input {
@@ -266,6 +193,8 @@ h5 {
   border-collapse: collapse;
   margin: 20px 0;
   font-size: 14px;
+  background-color: #bcbcbc;
+  color: #333;
 }
 
 .messages-container th, 
@@ -276,14 +205,14 @@ h5 {
 }
 
 .messages-container th {
-  background-color: #f4f4f4;
+  background-color: #374181;
   font-weight: bold;
 }
 
 .messages-container tr:nth-child(even) {
-  background-color: #f9f9f9;
+  background-color: #374161;
+}
+.messages-container tr:nth-child(odd) {
+  background-color: #374151;
 }
 
-.messages-container tr:hover {
-  background-color: #f1f1f1;
-}

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import './ChatInput.css'
 import { Send } from 'lucide-react';
 
 interface ChatInputProps {
@@ -15,19 +16,20 @@ export const ChatInput: React.FC<ChatInputProps> = ({ onSendMessage }) => {
   };
 
   return (
-    <div className="chat-input">
+    <div className="chat-input-container">
+      <div className="textarea-wrapper">
       <textarea
         value={inputValue}
         onChange={(e) => setInputValue(e.target.value)}
         placeholder="Ask a question about your documents..."
-        className="chat-input"
+        className="chat-textarea"
         rows={3}
         //onKeyDown={(e) => e.key === 'Enter' && handleSend()}
       />
-      <button onClick={handleSend}>
-        <Send />
-        Send
+      <button className="send-button" onClick={handleSend}>
+        <Send className="send-icon" />
       </button>
+      </div>
     </div>
   );
 };
