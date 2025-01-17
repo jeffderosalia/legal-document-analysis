@@ -8,8 +8,8 @@ import { askTrialDataRAG, getAllDocuments } from '../lib/osdk';
 import { createCollection, getFileCollection } from '../lib/osdkCollections';
 import { chat } from '../lib/llmclient';
 import { Document, Message, Provider, MessageGroup, OSDKMessage } from '../types';
-// import { Osdk  } from "@osdk/client";
-// import { FileCollection } from "@legal-document-analysis/sdk";
+//import { Osdk  } from "@osdk/client";
+//import { FileCollection } from "@legal-document-analysis/sdk";
 import Header from '../components/Header'
 
 type UIProvider = {
@@ -22,7 +22,7 @@ type UIProvider = {
 }
 
 const DocumentChat: React.FC = () => {
-//  const [collections, setCollections] = useState<Osdk.Instance<FileCollection>[]>();
+  //const [collections, setCollections] = useState<Osdk.Instance<FileCollection>[]>();
   const [documents, setDocuments] = useState<Document>();
   const [selectedDocs, setSelectedDocs] = useState<Document[]>([]);
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
@@ -50,35 +50,42 @@ const DocumentChat: React.FC = () => {
       askTrialDataRAG(messages[messages.length - 1].question.content, history, sendChatCB);
     }
   }, [messages, loadingLLM]);
-  useEffect(() => {
-    const fetchDocuments = async () => {
-      const docs = await getAllDocuments();
-/*
-      const [colls, docs] = await Promise.all(
-        [getFileCollection(),getAllDocuments()]
-      );
-      setCollections(colls);
-      const collIds = colls.map(m=> m.fileRid);
-      const orphanedFiles = docs.children?.filter(m=> !collIds.includes(m.id))
-      Object.values(
-        colls.reduce((acc, curr) => ({
-          ...acc,
-          [curr.collectionName||'']: {
-            id: curr.collectionId,
-            name: curr.collectionName,
-            type: 'folder' as const,
-            children: [...(acc[curr.collectionName].children || []), {
-              id: curr.fileRid,
-              name: curr.collectionName,
-              type: 'file' as const
-            }]
-          }
-        }), {})*/
+  const fetchDocuments = async () => {
+    const [colls, docs] = await Promise.all(
+      [getFileCollection(),getAllDocuments()]
+    );
+    //setCollections(colls);
+    const collIds = colls.reduce((acc, obj) => {
+      if (!acc[obj.collectionName||'']) {
+        acc[obj.collectionName||''] = [];
+      }
+      acc[obj.collectionName||''].push(obj.fileRid||'');
+      return acc;
+    }, {} as Record<string, string[]>);
+    
+    const distinctCollections = [...new Set(colls.map(obj => obj.collectionName))]
+      .map(coll => ({
+        id: coll,
+        name: coll,
+        type: 'folder'
+      } as Document));
+    distinctCollections.forEach(coll=> {
+      const matching = docs.children?.filter(m=> collIds[coll.name].includes(m.id))
+        docs.children = docs.children?.filter(m=> !collIds[coll.name].includes(m.id))
+      coll.children = matching;
+    });
+    if (distinctCollections.length>0) {
+      docs.children = [
+        ...distinctCollections,
+        ...docs.children || []
+      ];
+    }
 
-      setDocuments(docs);
-    };
-    fetchDocuments();
-}, []);
+    setDocuments(docs);
+  };
+  useEffect(() => {
+      fetchDocuments();
+  }, []);
 
   const toggleFolder = (folderId: string): void => {
     setExpandedFolders(prev => 
@@ -123,18 +130,6 @@ const DocumentChat: React.FC = () => {
     }));
   }, [providers, messages]);;
 
-  /*
-  useEffect(() => {
-    const create = async () => {
-      const fc = await getFileCollection()
-      console.log('fc');
-      setCollections(fc);
-      fc.map(m=> console.log(m.$primaryKey + ' ' +  m.collectionName + " " + m.fileRid))
-      //await deleteCollection(fc);
-    };
-    create();
-  }, [])*/
-
   const handleCreateCollection =  (collectioninfo: any) => {
     console.log(collectioninfo);
     const create = async () => {
@@ -143,8 +138,8 @@ const DocumentChat: React.FC = () => {
         file_rid: m.id
       }))
       await createCollection(collection);
-
-      console.log('isdone', await getFileCollection())
+      setSelectedDocs([]);
+      await fetchDocuments();
     };
     create();
   };
