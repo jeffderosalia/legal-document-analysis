@@ -4,7 +4,8 @@ import { ChevronRight, File, Folder } from 'lucide-react';
 import { ChatDisplay } from '../components/ChatDisplay';
 import { ChatInput } from '../components/ChatInput';
 import {CreateCollectionModal} from '../components/CreateCollectionModal'
-import { askTrialDataRAG, getAllDocuments } from '../lib/osdk';
+import {FileUpload} from '../components/FileUpload'
+import { askTrialDataRAG, getAllDocuments, uploadFile } from '../lib/osdk';
 import { createCollection, getFileCollection, deleteCollection } from '../lib/osdkCollections';
 import { chat } from '../lib/llmclient';
 import { Document, Message, Provider, MessageGroup, OSDKMessage } from '../types';
@@ -167,6 +168,17 @@ const DocumentChat: React.FC = () => {
     };
     create();
   };
+  const handleFileUpload = async (file: File) => {
+    // const b = await file.text();
+    // console.log(b);
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+      const base64 = e.target?.result as string;
+      const fileUploadResult = await uploadFile(file.name, base64);
+      console.log(fileUploadResult);
+      };
+    reader.readAsDataURL(file);
+  };
 
   const handleSendMessage = (message: string): void => {
     setQuestionCount(prev => prev + 1);
@@ -175,7 +187,6 @@ const DocumentChat: React.FC = () => {
     console.log("setMessages")
     setMessages(prevMessages => [...prevMessages, newMsg]);
     setLoadingLLM(true);
-    //askTrialDataRAG(message, history, sendChatCB);
   };
 
   const renderItem = (item: Document, depth: number = 0, parent: Document | null = null): React.ReactNode => {
@@ -225,6 +236,7 @@ const DocumentChat: React.FC = () => {
       <div className="sidebar">        
         <div className="sidebar-header">
           <button onClick={() => setIsModalOpen(true)}>Create Collection</button>
+          <FileUpload onFileSelect={handleFileUpload} />
         </div>
         <CreateCollectionModal
           isOpen={isModalOpen}

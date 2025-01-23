@@ -27,6 +27,9 @@
 .sidebar-header {
   font-weight: 500;
   margin-bottom: 16px;
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
 }
 .sidebar .provider-options {
   margin-top: auto;
