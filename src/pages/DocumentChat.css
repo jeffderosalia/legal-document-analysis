@@ -50,6 +50,14 @@
   border-radius: 4px;
   cursor: pointer;
 }
+.tree-item.file .x {
+  display: none;
+}
+.tree-item.file:hover .x {
+   display: block;
+}
+
+
 .sidebar .collections-container {
   overflow-y: auto;
 }

@@ -5,11 +5,11 @@ import { ChatDisplay } from '../components/ChatDisplay';
 import { ChatInput } from '../components/ChatInput';
 import {CreateCollectionModal} from '../components/CreateCollectionModal'
 import { askTrialDataRAG, getAllDocuments } from '../lib/osdk';
-import { createCollection, getFileCollection } from '../lib/osdkCollections';
+import { createCollection, getFileCollection, deleteCollection } from '../lib/osdkCollections';
 import { chat } from '../lib/llmclient';
 import { Document, Message, Provider, MessageGroup, OSDKMessage } from '../types';
-//import { Osdk  } from "@osdk/client";
-//import { FileCollection } from "@legal-document-analysis/sdk";
+import { Osdk  } from "@osdk/client";
+import { FileCollection } from "@legal-document-analysis/sdk";
 import Header from '../components/Header'
 
 type UIProvider = {
@@ -22,7 +22,7 @@ type UIProvider = {
 }
 
 const DocumentChat: React.FC = () => {
-  //const [collections, setCollections] = useState<Osdk.Instance<FileCollection>[]>();
+  const [collections, setCollections] = useState<Osdk.Instance<FileCollection>[]>([]);
   const [documents, setDocuments] = useState<Document>();
   const [selectedDocs, setSelectedDocs] = useState<Document[]>([]);
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
@@ -54,7 +54,7 @@ const DocumentChat: React.FC = () => {
     const [colls, docs] = await Promise.all(
       [getFileCollection(),getAllDocuments()]
     );
-    //setCollections(colls);
+    setCollections(colls);
     const collIds = colls.reduce((acc, obj) => {
       if (!acc[obj.collectionName||'']) {
         acc[obj.collectionName||''] = [];
@@ -86,6 +86,30 @@ const DocumentChat: React.FC = () => {
   useEffect(() => {
       fetchDocuments();
   }, []);
+
+  /*
+  useEffect(() => {
+    const fetch = async () => {
+      const coll = await getFileCollection();
+      coll.forEach(m=> {
+        console.log('')
+
+      } )
+    }
+    fetch();
+  })*/
+  const handleRemoveFromCollection = async (rid: string, coll: Document) => {
+    const itemToRemove = collections.filter(m=> m.collectionName === coll.name && m.fileRid === rid)
+    if (itemToRemove != null) {
+      //console.log(itemToRemove);
+      await deleteCollection(itemToRemove)
+      await fetchDocuments();
+    }
+    else {
+      console.log('no file to delete')
+    }
+
+  };
 
   const toggleFolder = (folderId: string): void => {
     setExpandedFolders(prev => 
@@ -154,7 +178,7 @@ const DocumentChat: React.FC = () => {
     //askTrialDataRAG(message, history, sendChatCB);
   };
 
-  const renderItem = (item: Document, depth: number = 0): React.ReactNode => {
+  const renderItem = (item: Document, depth: number = 0, parent: Document | null = null): React.ReactNode => {
     const isFolder = item.type === 'folder';
     const isExpanded = expandedFolders.includes(item.id);
     const isSelected = selectedDocs.find(m => m.id === item.id) !== undefined;
@@ -182,11 +206,14 @@ const DocumentChat: React.FC = () => {
           
           {isFolder ? <Folder className="icon" /> : <File className="icon" />}
           <span className="item-name">{item.name}</span>
+          {!isFolder && parent != null &&  (
+            <a className="x" onClick={() => handleRemoveFromCollection(item.id, parent)}>X</a>
+          )}
         </div>
 
         {isFolder && isExpanded && item.children && (
           <div className="children">
-            {item.children.map(child => renderItem(child, depth + 1))}
+            {item.children.map(child => renderItem(child, depth + 1, item))}
           </div>
         )}
       </div>

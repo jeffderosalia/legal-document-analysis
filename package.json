@@ -15,7 +15,7 @@
     "@langchain/core": "^0.3.24",
     "@langchain/openai": "^0.3.14",
     "@legal-document-analysis/sdk": "latest",
-    "@osdk/client": "^2.0.9",
+    "@osdk/client": "^2.1.0-beta.21",
     "@osdk/oauth": "^1.0.0",
     "lucide-react": "^0.468.0",
     "openai": "^4.76.3",
