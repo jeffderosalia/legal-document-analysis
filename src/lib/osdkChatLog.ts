@@ -39,7 +39,7 @@ const getChatLog = async (userId: string) : Promise<any>  =>  {
       thread.sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
     });
     return Object.values(lookup).sort((a, b) => 
-      new Date(a[0].when || '').getTime() - new Date(b[0].when || '').getTime()
+      new Date(a[0].when || '1970-01-01').getTime() - new Date(b[0].when || '1970-01-01').getTime()
     );
   }
 };

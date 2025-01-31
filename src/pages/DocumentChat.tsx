@@ -51,19 +51,7 @@ const DocumentChat: React.FC = () => {
     }
   ];
   useEffect(() => {
-    console.log('in effect')
     if (messages.length > 0 && loadingLLM) {
-      /*
-      const history: OSDKMessage[] = messages.flatMap((group) => [
-        {
-          type: group.question.role,
-          content: group.question.content
-        },
-        ...(group.answers[0] ? [{
-          type: group.answers[0].role,
-          content: group.answers[0].content
-        }] : [])
-      ]);*/
       const mediaItems = selectedDocs.map(m=> m.id);
       createPrompt(messages[messages.length - 1].question.content, mediaItems, sendChatCB);
     }
@@ -105,7 +93,6 @@ const DocumentChat: React.FC = () => {
       ];
     }
 
-
     setDocuments(docs);
   };
   useEffect(() => {
@@ -114,7 +101,7 @@ const DocumentChat: React.FC = () => {
       const u = await getUser();
       setUser(u);
       const chatLog = await getChatLog(u.id);
-      console.log(chatLog)
+      //console.log(chatLog)
       setRecentChats(chatLog);
     };
     setup();
@@ -122,25 +109,35 @@ const DocumentChat: React.FC = () => {
 
   const storeChatMessage = async (mGroup: MessageGroup) => {
     const threadId = `t${messages[0].when.toISOString().replace(/[-:.]/g,'')}`;
-    const chatLogEntry: createChatLog.Params[] = [{
-      
-      message: mGroup.question.content,
-      when: new Date().toISOString(),
-      order: (messages.length*2)-1,
-      role: mGroup.question.role,
-      thread_id: threadId,
-      who: user.id
-    },
-    {      
-      message: mGroup.answers[0].content,
-      when: new Date().toISOString(),
-      order: (messages.length*2),
-      role: mGroup.answers[0].role,
-      thread_id: threadId,
-      who: user.id
-    }
+    const chatLogEntry: createChatLog.Params[] = [
+      {      
+        message: mGroup.question.content,
+        when: mGroup.when.toISOString(),
+        order: (messages.length*2)-1,
+        role: mGroup.question.role,
+        threadId: threadId,
+        who: user.id
+      },
+      {      
+        message: mGroup.answers[0].content,
+        when: mGroup.when.toISOString(),
+        order: (messages.length*2),
+        role: mGroup.answers[0].role,
+        threadId: threadId,
+        who: user.id
+      }
     ];
     await addToChat(chatLogEntry);
+    setRecentChats(prevChats => {
+      const threadIndex = prevChats.findIndex(thread => thread[0]?.threadId === threadId);      
+      if (threadIndex >= 0) {
+      const newChats = [...prevChats];
+      newChats[threadIndex].push(...chatLogEntry);
+          return newChats;
+      } else {
+          return [...prevChats, chatLogEntry];
+      }
+    });
   };
   const handleRemoveFromCollection = async (rid: string, coll: Document) => {
     const itemToRemove = collections.filter(m=> m.collectionName === coll.name && m.fileRid === rid)
@@ -235,10 +232,6 @@ const DocumentChat: React.FC = () => {
       console.log(fileUploadResult);
       };
     reader.readAsDataURL(file);
-  const [recentChats, setRecentChats]= useState<any[]>([])
-  const [loadingLLM, setLoadingLLM] = useState<Boolean>(false);
-  const [messages, setMessages] = useState<MessageGroup[]>([]);
-  const [questionCount, setQuestionCount] = useState<number>(0);
     */
 
   };
@@ -247,11 +240,11 @@ const DocumentChat: React.FC = () => {
     setQuestionCount(0);
   }
   const handleGetChat = (chatLogs: any[]) => {
-
-    console.log(messages)
     const groups: MessageGroup[] = [];
     let currentGroup: MessageGroup | null = null;
-  
+    let groupId = 1;
+ 
+    
     for (const log of chatLogs) {
       const message: Message = {
         role: log.role,
@@ -260,25 +253,25 @@ const DocumentChat: React.FC = () => {
   
       if (log.role === 'user') {
         currentGroup = {
+          groupId: `${groupId}`,
           question: message,
           answers: [],
           when: new Date(log.when)
         };
+        groupId++;
         groups.push(currentGroup);
       } else if (log.role === 'assistant' && currentGroup) {
         currentGroup.answers.push(message);
       }
     }
-
     setMessages(groups);
-    setQuestionCount(groups.length);
+    setQuestionCount(groups.length+1);
   };
 
   const handleSendMessage = (message: string): void => {
     setQuestionCount(prev => prev + 1);
     const answers: Message[] = providers.filter(m=> m.enabled).map(m => ({role: 'assistant', content: '', provider: m.name}))
-    const newMsg: MessageGroup = { started: false, groupId: `${questionCount}`,  question: {role: 'user', content: message }, answers: answers, when: new Date()};
-    console.log("setMessages")
+    const newMsg: MessageGroup = {  groupId: `${questionCount}`,  question: {role: 'user', content: message }, answers: answers, when: new Date()};
     setMessages(prevMessages => [...prevMessages, newMsg]);
     setLoadingLLM(true);
   };
@@ -361,7 +354,7 @@ const DocumentChat: React.FC = () => {
             <button onClick={handleNewChat}><MessageSquarePlus /></button>
           </div>
           <ul>
-            {recentChats && recentChats.map(c => (
+            {recentChats && [...recentChats].reverse().map(c => (
               <li key={c[0].threadId}><a onClick={() => handleGetChat(c)}><MessagesSquare width="16px" height="16px" /> {c[0].message}</a></li>
             ))}
           </ul>

@@ -16,7 +16,7 @@ export const ChatDisplay: React.FC<ChatDisplayProps> = ({ messages }) => {
             </div>
             <div className={`message-wrapper ${group.answers[0].role}`}>
                 {group.answers.map((message, i) => (
-                  <ChatMessage key={i} message={message} />
+                  <ChatMessage key={`answers_${group.groupId}_${i}`} message={message} />
                 ))}
             </div>
           </React.Fragment>

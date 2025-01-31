@@ -28,7 +28,6 @@ export interface MessageGroup {
   groupId?: string; 
   question: Message;
   answers: Message[];
-  started?: Boolean,
   when: Date
 }
 

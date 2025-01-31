@@ -24,6 +24,9 @@
     background: #3B82F6;
     color: #FFF;
   }
+  .message-wrapper .message a {
+    color: #cdcdcd;
+  }
   /* Left align assistant messages */
   .message-wrapper.assistant {
     justify-content: flex-start;

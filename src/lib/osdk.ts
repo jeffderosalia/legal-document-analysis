@@ -27,7 +27,6 @@ const debug = () => {
 
 type askTrialDataRAGCB = (n: any[]) => any;
 const askTrialDataRAG = async (question: string, history: OSDKMessage[] , callback: askTrialDataRAGCB) =>  {
-  console.log('askTrialDataRAG');
   const result = await client(semanticSearchGeneratePrompt).executeFunction({
     "question": question,
     "history": history
@@ -36,7 +35,6 @@ const askTrialDataRAG = async (question: string, history: OSDKMessage[] , callba
 };
 
 const createPrompt = async (question: string, mediaItems: string[], callback: askTrialDataRAGCB) =>  {
-  console.log('askTrialDataRAG');
   const result = await client(constructPromptMaybeWithSelectedDocuments).executeFunction({
     "question": question,
     "history_string": '',
