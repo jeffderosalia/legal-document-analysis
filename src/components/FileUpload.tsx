@@ -29,7 +29,7 @@ export const FileUpload: React.FC<FileUploadProps> = ({ onFileSelect }) => {
         onChange={handleFileChange}
         accept=".pdf"
       />
-      <button onClick={handleClick} className="upload-button">
+      <button disabled onClick={handleClick} className="upload-button" style={{opacity:'.5'}}>
         <Upload size={20} />
         Upload File
       </button>

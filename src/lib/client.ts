@@ -1,4 +1,4 @@
-import { Client, createClient } from "@osdk/client";
+import { Client, createClient, createPlatformClient, PlatformClient } from "@osdk/client";
 import { $ontologyRid } from "@legal-document-analysis/sdk";
 import { createPublicOauthClient } from "@osdk/oauth";
 
@@ -19,12 +19,18 @@ function checkEnv(
   }
 }
 
+
 export const auth = createPublicOauthClient(
   clientId,
   url,
   redirectUrl,
   )
-/**
+
+export const platformClient: PlatformClient = createPlatformClient(url, auth);
+
+
+
+  /**
  * Initialize the client to interact with the Ontology SDK
  */
 const client: Client = createClient(

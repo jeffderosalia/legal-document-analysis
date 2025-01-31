@@ -7,14 +7,14 @@ import {
   BaseMessage 
 } from "@langchain/core/messages";
 import { BaseCallbackHandler } from "@langchain/core/callbacks/base";
-import { StreamingCallback, Provider, Message, ChatOptions  } from "../types";
+import { StreamingCallback, StreamingCallbackEnd, Provider, Message, ChatOptions  } from "../types";
 
 // Streaming handler class
 class StreamingHandler extends BaseCallbackHandler {
     get name(): string {
         return "StreamingHandler";
     }
-    constructor(private onToken: StreamingCallback) {
+    constructor(private onToken: StreamingCallback, private onComplete?: StreamingCallbackEnd) {
       super();
     }
   
@@ -22,8 +22,11 @@ class StreamingHandler extends BaseCallbackHandler {
       this.onToken(token);
     }
     async handleLLMStart(): Promise<void> {}
-    async handleLLMEnd(): Promise<void> {}
-    async handleLLMError(): Promise<void> {}
+    async handleLLMEnd(): Promise<void> {
+      if (this.onComplete) {
+        this.onComplete();
+      }
+    }   async handleLLMError(): Promise<void> {}
     async handleChainStart(): Promise<void> {}
     async handleChainEnd(): Promise<void> {}
     async handleChainError(): Promise<void> {}
@@ -43,7 +46,8 @@ export async function chat(
   const { 
     streaming = false, 
     temperature = 1, 
-    onToken
+    onToken,
+    onComplete
   } = options;
 
   // Convert messages to LangChain format
@@ -77,7 +81,7 @@ export async function chat(
 
   // Setup streaming handler if needed
   const callbacks = streaming && onToken 
-    ? [new StreamingHandler(onToken)]
+    ? [new StreamingHandler(onToken, onComplete)]
     : undefined;
 
   try {

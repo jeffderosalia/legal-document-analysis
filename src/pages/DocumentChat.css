@@ -27,9 +27,55 @@
 .sidebar-header {
   font-weight: 500;
   margin-bottom: 16px;
-  display: flex;
-  justify-content: space-between;
   gap: 10px;
+  position: absolute;
+  top:0;
+  right:0;
+}
+.recent-chats .sidebar-header button {
+  position: absolute;
+  top: 10px;
+  right: 0;
+  background-color: transparent;
+  padding:0;
+  margin: 0;
+}
+
+.sidebar .recent-chats {
+  margin-top: 20px;
+  padding: 1rem;
+  border-top: 1px solid #eee;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  text-align: left;
+  list-style: none;
+}
+.sidebar .recent-chats ul {
+  margin: 0;
+  padding: 0;
+}
+.sidebar .recent-chats li {
+  list-style: none;
+  margin-bottom: 10px;
+  line-height: 16px;
+  font-size: 14px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.sidebar .recent-chats li a{
+  cursor: pointer;
+}    
+.sidebar .recent-chats li a:hover{
+  background-color: midnightblue;
+}    
+.sidebar .recent-chats li svg {
+  padding-right:5px;
+}
+
+.sidebar .recent-chats a {
+  color:white;
 }
 .sidebar .provider-options {
   margin-top: auto;
@@ -63,6 +109,9 @@
 
 .sidebar .collections-container {
   overflow-y: auto;
+}
+.sidebar section {
+  position: relative;
 }
 
 .chevron {

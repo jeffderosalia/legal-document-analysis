@@ -1,17 +1,19 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import "./DocumentChat.css";
-import { ChevronRight, File, Folder } from 'lucide-react';
+import { ChevronRight, File, Folder, MessagesSquare, MessageSquarePlus} from 'lucide-react';
 import { ChatDisplay } from '../components/ChatDisplay';
 import { ChatInput } from '../components/ChatInput';
 import {CreateCollectionModal} from '../components/CreateCollectionModal'
 import {FileUpload} from '../components/FileUpload'
-import { askTrialDataRAG, getAllDocuments, uploadFile } from '../lib/osdk';
+import {GearMenu } from '../components/GearMenu'
+import { createPrompt, getAllDocuments, uploadFile, getUser } from '../lib/osdk';
 import { createCollection, getFileCollection, deleteCollection } from '../lib/osdkCollections';
+import { addToChat, getChatLog } from '../lib/osdkChatLog';
 import { chat } from '../lib/llmclient';
-import { Document, Message, Provider, MessageGroup, OSDKMessage } from '../types';
+import { Document, Message, Provider, MessageGroup } from '../types';
 import { Osdk  } from "@osdk/client";
-import { FileCollection } from "@legal-document-analysis/sdk";
-import Header from '../components/Header'
+import { FileCollection, createChatLog } from "@legal-document-analysis/sdk";
+import {Header} from '../components/Header'
 
 type UIProvider = {
   id: 'chatgpt' | 'anthropic';
@@ -23,8 +25,10 @@ type UIProvider = {
 }
 
 const DocumentChat: React.FC = () => {
+  const [user, setUser] = useState<any>();
   const [collections, setCollections] = useState<Osdk.Instance<FileCollection>[]>([]);
   const [documents, setDocuments] = useState<Document>();
+  const [recentChats, setRecentChats]= useState<any[]>([])
   const [selectedDocs, setSelectedDocs] = useState<Document[]>([]);
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const [expandedFolders, setExpandedFolders] = useState<string[]>(['projects', 'marketing']);
@@ -35,9 +39,21 @@ const DocumentChat: React.FC = () => {
     { id: 'chatgpt', provider: 'openai', model: 'gpt-4o-mini', name: 'ChatGPT', enabled: true, apiKey: process.env.VITE_OPENAI_API_KEY || "x" },
     { id: 'anthropic', provider: 'anthropic', model: 'claude-3-5-sonnet-20241022',name: 'Anthropic', enabled: false, apiKey: process.env.VITE_ANTHROPIC_API_KEY || "x" }
   ]);
+
+  const actions = [
+    { 
+      label: 'Create Collection', 
+      onClick: () => setIsModalOpen(true) 
+    },
+    { 
+      label: 'Upload File', 
+      onClick: () => console.log('delete') 
+    }
+  ];
   useEffect(() => {
     console.log('in effect')
     if (messages.length > 0 && loadingLLM) {
+      /*
       const history: OSDKMessage[] = messages.flatMap((group) => [
         {
           type: group.question.role,
@@ -47,11 +63,12 @@ const DocumentChat: React.FC = () => {
           type: group.answers[0].role,
           content: group.answers[0].content
         }] : [])
-      ]);  
-      askTrialDataRAG(messages[messages.length - 1].question.content, history, sendChatCB);
+      ]);*/
+      const mediaItems = selectedDocs.map(m=> m.id);
+      createPrompt(messages[messages.length - 1].question.content, mediaItems, sendChatCB);
     }
   }, [messages, loadingLLM]);
-  const fetchDocuments = async () => {
+  const fetchDocuments = async (firstTime: boolean = false) => {
     const [colls, docs] = await Promise.all(
       [getFileCollection(),getAllDocuments()]
     );
@@ -70,6 +87,12 @@ const DocumentChat: React.FC = () => {
         name: coll,
         type: 'folder'
       } as Document));
+
+    if (firstTime) {
+      const allitems = [...distinctCollections, ...docs.children || []]
+      setSelectedDocs(allitems);
+    }
+  
     distinctCollections.forEach(coll=> {
       const matching = docs.children?.filter(m=> collIds[coll.name].includes(m.id))
         docs.children = docs.children?.filter(m=> !collIds[coll.name].includes(m.id))
@@ -82,23 +105,43 @@ const DocumentChat: React.FC = () => {
       ];
     }
 
+
     setDocuments(docs);
   };
   useEffect(() => {
-      fetchDocuments();
+    const setup = async () => {
+      await fetchDocuments(true);
+      const u = await getUser();
+      setUser(u);
+      const chatLog = await getChatLog(u.id);
+      console.log(chatLog)
+      setRecentChats(chatLog);
+    };
+    setup();
   }, []);
 
-  /*
-  useEffect(() => {
-    const fetch = async () => {
-      const coll = await getFileCollection();
-      coll.forEach(m=> {
-        console.log('')
-
-      } )
+  const storeChatMessage = async (mGroup: MessageGroup) => {
+    const threadId = `t${messages[0].when.toISOString().replace(/[-:.]/g,'')}`;
+    const chatLogEntry: createChatLog.Params[] = [{
+      
+      message: mGroup.question.content,
+      when: new Date().toISOString(),
+      order: (messages.length*2)-1,
+      role: mGroup.question.role,
+      thread_id: threadId,
+      who: user.id
+    },
+    {      
+      message: mGroup.answers[0].content,
+      when: new Date().toISOString(),
+      order: (messages.length*2),
+      role: mGroup.answers[0].role,
+      thread_id: threadId,
+      who: user.id
     }
-    fetch();
-  })*/
+    ];
+    await addToChat(chatLogEntry);
+  };
   const handleRemoveFromCollection = async (rid: string, coll: Document) => {
     const itemToRemove = collections.filter(m=> m.collectionName === coll.name && m.fileRid === rid)
     if (itemToRemove != null) {
@@ -109,7 +152,6 @@ const DocumentChat: React.FC = () => {
     else {
       console.log('no file to delete')
     }
-
   };
 
   const toggleFolder = (folderId: string): void => {
@@ -121,7 +163,16 @@ const DocumentChat: React.FC = () => {
   };
 
   const toggleDocument = (doc: Document): void => {
-    console.log(selectedDocs);
+    setSelectedDocs(prev =>
+      prev.find(m=> m.id == doc.id) === undefined
+        ? [...prev, doc]
+        : prev.filter(docx => docx.id !== doc.id)
+    );
+  };
+  const toggleCollection= (doc: Document): void => {
+    if (doc.children) {
+      doc?.children.forEach(m=> toggleDocument(m));
+    }
     setSelectedDocs(prev =>
       prev.find(m=> m.id == doc.id) === undefined
         ? [...prev, doc]
@@ -145,11 +196,14 @@ const DocumentChat: React.FC = () => {
         streaming: true,
         onToken: (token) => {
           fullResponse += token;
-          console.log("chat messages")
-          console.log(messages)
           const newMessages = [...messages];
           newMessages[newMessages.length-1].answers[index].content = fullResponse;
           setMessages(newMessages);
+        },
+        onComplete: () => {
+          if (index === 0) {
+            storeChatMessage(messages[messages.length-1])
+          }
         }
       });
     }));
@@ -169,8 +223,11 @@ const DocumentChat: React.FC = () => {
     create();
   };
   const handleFileUpload = async (file: File) => {
-    // const b = await file.text();
-    // console.log(b);
+    const base64 = await file.text();
+    console.log(base64);
+    const fileUploadResult = await uploadFile(file.name, base64);
+    console.log(fileUploadResult);
+  /*
     const reader = new FileReader();
     reader.onload = async (e) => {
       const base64 = e.target?.result as string;
@@ -178,12 +235,49 @@ const DocumentChat: React.FC = () => {
       console.log(fileUploadResult);
       };
     reader.readAsDataURL(file);
+  const [recentChats, setRecentChats]= useState<any[]>([])
+  const [loadingLLM, setLoadingLLM] = useState<Boolean>(false);
+  const [messages, setMessages] = useState<MessageGroup[]>([]);
+  const [questionCount, setQuestionCount] = useState<number>(0);
+    */
+
+  };
+  const handleNewChat = () => {
+    setMessages([]);
+    setQuestionCount(0);
+  }
+  const handleGetChat = (chatLogs: any[]) => {
+
+    console.log(messages)
+    const groups: MessageGroup[] = [];
+    let currentGroup: MessageGroup | null = null;
+  
+    for (const log of chatLogs) {
+      const message: Message = {
+        role: log.role,
+        content: log.message
+      };
+  
+      if (log.role === 'user') {
+        currentGroup = {
+          question: message,
+          answers: [],
+          when: new Date(log.when)
+        };
+        groups.push(currentGroup);
+      } else if (log.role === 'assistant' && currentGroup) {
+        currentGroup.answers.push(message);
+      }
+    }
+
+    setMessages(groups);
+    setQuestionCount(groups.length);
   };
 
   const handleSendMessage = (message: string): void => {
     setQuestionCount(prev => prev + 1);
     const answers: Message[] = providers.filter(m=> m.enabled).map(m => ({role: 'assistant', content: '', provider: m.name}))
-    const newMsg: MessageGroup = { started: false, groupId: `${questionCount}`,  question: {role: 'user', content: message }, answers: answers};
+    const newMsg: MessageGroup = { started: false, groupId: `${questionCount}`,  question: {role: 'user', content: message }, answers: answers, when: new Date()};
     console.log("setMessages")
     setMessages(prevMessages => [...prevMessages, newMsg]);
     setLoadingLLM(true);
@@ -201,17 +295,26 @@ const DocumentChat: React.FC = () => {
           style={{ paddingLeft: `${depth * 20}px` }}
         >
           {isFolder ? (
-            <ChevronRight
-              className={`chevron ${isExpanded ? 'expanded' : ''}`}
-              onClick={() => toggleFolder(item.id)}
+            <>
+              <div className="checkbox-wrapper">
+                <input
+                  type="checkbox"
+                  checked={isSelected}
+                  onChange={() => toggleCollection(item)}
+                />
+              </div>
+              <ChevronRight
+                className={`chevron ${isExpanded ? 'expanded' : ''}`}
+                onClick={() => toggleFolder(item.id)}
             />
+            </>
           ) : (
             <div className="checkbox-wrapper">
-              <input
-                type="checkbox"
-                checked={isSelected}
-                onChange={() => toggleDocument(item)}
-              />
+            <input
+              type="checkbox"
+              checked={isSelected}
+              onChange={() => toggleDocument(item)}
+            />
             </div>
           )}
           
@@ -234,10 +337,6 @@ const DocumentChat: React.FC = () => {
   return (
     <div className="app-container">
       <div className="sidebar">        
-        <div className="sidebar-header">
-          <button onClick={() => setIsModalOpen(true)}>Create Collection</button>
-          <FileUpload onFileSelect={handleFileUpload} />
-        </div>
         <CreateCollectionModal
           isOpen={isModalOpen}
           onClose={() => setIsModalOpen(false)}
@@ -245,9 +344,29 @@ const DocumentChat: React.FC = () => {
           onCreateCollection={handleCreateCollection}
         />
         <section className="collections-container">
+        <h5>Document Sets</h5>
+        <div className="sidebar-header">
+          <GearMenu actions={actions} />
+
+          <div style={{display: 'none'}}>
+          <FileUpload onFileSelect={handleFileUpload} />
+          </div>
+        </div>
+
         {documents && documents.children?.map(item => renderItem(item))}
         </section>
-        <div className="provider-options">
+        <section className="recent-chats">
+          <h5>Recent</h5>
+          <div className="sidebar-header">
+            <button onClick={handleNewChat}><MessageSquarePlus /></button>
+          </div>
+          <ul>
+            {recentChats && recentChats.map(c => (
+              <li key={c[0].threadId}><a onClick={() => handleGetChat(c)}><MessagesSquare width="16px" height="16px" /> {c[0].message}</a></li>
+            ))}
+          </ul>
+        </section>
+        <section className="provider-options">
           <h5>Select your Providers</h5>
           {providers.map(provider => (
             <label key={provider.id}>
@@ -261,11 +380,13 @@ const DocumentChat: React.FC = () => {
               {provider.name}
             </label>
           ))}
-          </div>
+          </section>
       </div>
 
       <div className="main-content">
-        <Header />
+        {user && (
+        <Header givenName={user.givenName} />
+        )}
         <ChatDisplay messages={messages} />
         <ChatInput onSendMessage={handleSendMessage} />
       </div>

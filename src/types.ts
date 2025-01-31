@@ -10,6 +10,7 @@ export interface DocumentNode extends Document {
 }
 export type Provider = "openai" | "anthropic";
 export type StreamingCallback = (token: string) => void;
+export type StreamingCallbackEnd = () => void;
 export type MessageRole = "system" | "user" | "assistant";
 
 export interface OSDKMessage {
@@ -27,12 +28,14 @@ export interface MessageGroup {
   groupId?: string; 
   question: Message;
   answers: Message[];
-  started?: Boolean
+  started?: Boolean,
+  when: Date
 }
 
 export interface ChatOptions {
   streaming?: boolean;
   temperature?: number;
   onToken?: StreamingCallback;
+  onComplete?: StreamingCallbackEnd;
 }
   
