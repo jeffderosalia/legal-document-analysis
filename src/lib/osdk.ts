@@ -1,6 +1,7 @@
 import { 
   $Objects, $Actions, $Queries, 
-  EmbeddedTrialDataChunkV2,
+  //EmbeddedTrialDataChunkV2,
+  UploadedMediaChunk,
   semanticSearchGeneratePrompt,
   constructPromptMaybeWithSelectedDocuments
 } from "@legal-document-analysis/sdk";
@@ -47,7 +48,7 @@ const getAllDocuments = async () : Promise<Document>  =>  {
   const sortByPath = (a: Document, b: Document): number => {
     return a.name.localeCompare(b.name);
   };
-  const result = await client(EmbeddedTrialDataChunkV2)
+  const result = await client(UploadedMediaChunk)
       .aggregate({
           $select: {  $count: "unordered"  },
           $groupBy: { mediaItemRid : "exact", "path": "exact" }
