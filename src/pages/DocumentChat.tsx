@@ -13,10 +13,11 @@ import { chat } from '../lib/llmclient';
 import { Document, Message, Provider, MessageGroup } from '../types';
 import { Osdk  } from "@osdk/client";
 import { FileCollection, createChatLog } from "@legal-document-analysis/sdk";
-import {Header} from '../components/Header'
+import {Header} from '../components/Header';
+import {getExampleDocText} from '../lib/gen_with_example'
 
 type UIProvider = {
-  id: 'chatgpt' | 'anthropic';
+  id: 'chatgpt' | 'anthropic' | 'anthropic_with_example';
   provider: Provider;
   model: string;
   name: string;
@@ -37,7 +38,8 @@ const DocumentChat: React.FC = () => {
   const [questionCount, setQuestionCount] = useState<number>(0);
   const [providers, setProviders] = useState<UIProvider[]>([
     { id: 'chatgpt', provider: 'openai', model: 'gpt-4o-mini', name: 'ChatGPT', enabled: true, apiKey: process.env.VITE_OPENAI_API_KEY || "x" },
-    { id: 'anthropic', provider: 'anthropic', model: 'claude-3-5-sonnet-20241022',name: 'Anthropic', enabled: false, apiKey: process.env.VITE_ANTHROPIC_API_KEY || "x" }
+    { id: 'anthropic', provider: 'anthropic', model: 'claude-3-5-sonnet-20241022',name: 'Anthropic', enabled: false, apiKey: process.env.VITE_ANTHROPIC_API_KEY || "x" },
+    { id: 'anthropic_with_example', provider: 'anthropic', model: 'claude-3-5-sonnet-20241022',name: 'Anthropic + Example Memo', enabled: false, apiKey: process.env.VITE_ANTHROPIC_API_KEY || "x" }
   ]);
 
   const actions = [
@@ -185,6 +187,9 @@ const DocumentChat: React.FC = () => {
     allMessages[0].content += "\nCreate all tables using markdown";
     console.log("allMessages");
     console.log(allMessages);
+
+    const example_doc_text = await getExampleDocText()
+    console.log(example_doc_text)
   
     await Promise.all(enabledProviders.map(async (p, index) => {
       let fullResponse = '';

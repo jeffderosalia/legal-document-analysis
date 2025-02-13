@@ -8,6 +8,7 @@ import {
 } from "@langchain/core/messages";
 import { BaseCallbackHandler } from "@langchain/core/callbacks/base";
 import { StreamingCallback, StreamingCallbackEnd, Provider, Message, ChatOptions  } from "../types";
+import { getExampleDocText } from "./gen_with_example";
 
 // Streaming handler class
 class StreamingHandler extends BaseCallbackHandler {
@@ -64,6 +65,23 @@ export async function chat(
     }
   });
 
+  const example = await getExampleDocText()
+
+  var exampleText = ""
+  if (example !== undefined) {
+    console.log(`Got example text of length: ${example.length}`)
+
+    exampleText = "Make sure to write in the same style as the following example document. Use the same structure, "+
+        "organization and order of presentation of information, and detail. Make absolutely sure not to use any of the actual information from the example, "+
+        "only use information present in the relevant transcript pages. The example is just to show how your answer should be structured and presented. "+
+        "Here is the example document:\n\n"+
+        example
+  }
+
+  const exampleMessage = new HumanMessage(exampleText)
+
+  const augmentedMessages = [langchainMessages[0], exampleMessage, langchainMessages[1]]
+
   // Setup model based on provider
   const model_instance = provider === "openai" 
     ? new ChatOpenAI({
@@ -85,7 +103,7 @@ export async function chat(
     : undefined;
 
   try {
-    const response = await model_instance.invoke(langchainMessages, { callbacks });
+    const response = await model_instance.invoke(augmentedMessages, { callbacks });
     return response.content;
   } catch (error) {
     console.error(`Error with ${provider}:`, error);
