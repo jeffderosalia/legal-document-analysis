@@ -1,11 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import "./DocumentChat.css";
-import { ChevronRight, File, Folder, MessagesSquare, MessageSquarePlus} from 'lucide-react';
+import { ChevronRight, File, Folder, MessagesSquare, PanelLeftDashed, SquarePen} from 'lucide-react';
 import { ChatDisplay } from '../components/ChatDisplay';
 import { ChatInput } from '../components/ChatInput';
-import {CreateCollectionModal} from '../components/CreateCollectionModal'
-import {FileUpload} from '../components/FileUpload'
-import {GearMenu } from '../components/GearMenu'
 import { createPrompt, getAllDocuments, uploadFile, getUser } from '../lib/osdk';
 import { createCollection, getFileCollection, deleteCollection } from '../lib/osdkCollections';
 import { addToChat, getChatLog } from '../lib/osdkChatLog';
@@ -233,39 +230,10 @@ const DocumentChat: React.FC = () => {
       };
     reader.readAsDataURL(file);
     */
-
   };
-  const handleNewChat = () => {
-    setMessages([]);
-    setQuestionCount(0);
-  }
-  const handleGetChat = (chatLogs: any[]) => {
-    const groups: MessageGroup[] = [];
-    let currentGroup: MessageGroup | null = null;
-    let groupId = 1;
- 
-    
-    for (const log of chatLogs) {
-      const message: Message = {
-        role: log.role,
-        content: log.message
-      };
-  
-      if (log.role === 'user') {
-        currentGroup = {
-          groupId: `${groupId}`,
-          question: message,
-          answers: [],
-          when: new Date(log.when)
-        };
-        groupId++;
-        groups.push(currentGroup);
-      } else if (log.role === 'assistant' && currentGroup) {
-        currentGroup.answers.push(message);
-      }
-    }
-    setMessages(groups);
-    setQuestionCount(groups.length+1);
+  const handleSetCurrentChat = (chatLog: any[]) => {
+    setMessages(chatLog);
+    setQuestionCount(chatLog.length === 0 ? 0 : chatLog.length+1);
   };
 
   const handleSendMessage = (message: string): void => {
@@ -329,52 +297,7 @@ const DocumentChat: React.FC = () => {
 
   return (
     <div className="app-container">
-      <div className="sidebar">        
-        <CreateCollectionModal
-          isOpen={isModalOpen}
-          onClose={() => setIsModalOpen(false)}
-          documents={selectedDocs}
-          onCreateCollection={handleCreateCollection}
-        />
-        <section className="collections-container">
-        <h5>Document Sets</h5>
-        <div className="sidebar-header">
-          <GearMenu actions={actions} />
 
-          <div style={{display: 'none'}}>
-          <FileUpload onFileSelect={handleFileUpload} />
-          </div>
-        </div>
-
-        {documents && documents.children?.map(item => renderItem(item))}
-        </section>
-        <section className="recent-chats">
-          <h5>Recent</h5>
-          <div className="sidebar-header">
-            <button onClick={handleNewChat}><MessageSquarePlus /></button>
-          </div>
-          <ul>
-            {recentChats && [...recentChats].reverse().map(c => (
-              <li key={c[0].threadId}><a onClick={() => handleGetChat(c)}><MessagesSquare width="16px" height="16px" /> {c[0].message}</a></li>
-            ))}
-          </ul>
-        </section>
-        <section className="provider-options">
-          <h5>Select your Providers</h5>
-          {providers.map(provider => (
-            <label key={provider.id}>
-              <input 
-                type="checkbox"
-                checked={provider.enabled}
-                onChange={() => setProviders(prev => 
-                  prev.map(p => p.id === provider.id ? {...p, enabled: !p.enabled} : p)
-                )}
-              />
-              {provider.name}
-            </label>
-          ))}
-          </section>
-      </div>
 
       <div className="main-content">
         {user && (
