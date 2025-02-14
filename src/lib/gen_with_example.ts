@@ -169,7 +169,7 @@ async function invokeWithExample(
     options: ChatOpenAICallOptions & ChatAnthropicCallOptions
   ) {
 
-    const model_with_tools = model_instance.bindTools([memoCreator], {tool_choice: "memoCreator"})
+    const model_with_tools = model_instance.bindTools([memoCreator])
 
     const tool_call = await model_with_tools.invoke(messages)
 
