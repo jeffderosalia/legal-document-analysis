@@ -10,7 +10,7 @@ import { BaseLanguageModelInput } from "@langchain/core/language_models/base";
 import { AIMessage, AIMessageChunk, BaseMessage, HumanMessage, SystemMessage } from "@langchain/core/messages";
 import { ChatOpenAI, ChatOpenAICallOptions } from "@langchain/openai";
 import {ChatPromptTemplate, PromptTemplate} from "@langchain/core/prompts"
-import { RunnableLambda } from "@langchain/core/runnables";
+import { RunnableConfig, RunnableLambda } from "@langchain/core/runnables";
 import { tool } from "@langchain/core/tools"
 
 
@@ -21,13 +21,7 @@ const getExampleDocText = async () : Promise<string | undefined> => {
     return doc?.rawText
 }
 
-//   Create an outline of a case memorandum for the  trial, based on the memorandum provided. Give a list of sections, a short description of the type of content to be included in each section sufficient as instruction to fill it with more detail later, and a description of the structure and format of each section (tables, bullet points, etc). Respond with valid JSON formatted as follows:
-
-//   [{"section_name": SECTION_NAME, "section_description": SECTION_DESCRIPTION} "section_formatting": SECTION_FORMATTING}...]
-  
-//   Return only JSON, no preamble or postscript.
-
-const tool
+const toolStartMessages: Record<string, string> = {"memoCreator": "Creating memo"}
 
 const Section = z.object({
     section_name: z.string().describe("The name of the section"),
@@ -50,8 +44,9 @@ const memoSchema = z.object({
 
 
 const memoCreator = tool(
-    async ({trial}) => {
-        const memo = await generateMemo(trial)
+    async ({trial}, config?: RunnableConfig) : Promise<string> => {
+        const memo = await generateMemo(trial, config)
+        return memo
     },
     {
         name: "memoCreator",
@@ -60,39 +55,14 @@ const memoCreator = tool(
     }
 )
 
-async function addExampleToMessages(messages: BaseMessage[]): Promise<BaseMessage[]>{
-    console.log("Adding example to messages")
 
-    const example = await getExampleDocText()
-
-    var exampleText = ""
-    if (example !== undefined) {
-        console.log(`Got example text of length: ${example.length}`)
-
-        exampleText = "Make sure to write in the same style as the following example document. Use the same structure, "+
-            "organization and order of presentation of information, and detail. Make absolutely sure not to use any of the actual information from the example, "+
-            "only use information present in the relevant transcript pages. The example is just to show how your answer should be structured and presented. "+
-            "Here is the example document:\n\n"+
-            example
-    }
-
-    const exampleMessage = new HumanMessage(exampleText)
-    const new_message = messages.pop()
-
-    if (new_message !== undefined) {
-        messages = messages.concat([exampleMessage, new_message])
-    }
-
-    return messages
-}
-
-
-async function generateSection(section: Section){
+async function generateSection(section: Section, config?: RunnableConfig){
 
     console.log(`Generating section: ${section.section_name}`)
 
     const openai_model = new ChatOpenAI({
         modelName: "gpt-4o-mini",
+        streaming: true,
         openAIApiKey: process.env.VITE_OPENAI_API_KEY,
     })
 
@@ -109,7 +79,7 @@ async function generateSection(section: Section){
 
                     Make sure to format your answer with markdown, 
                     and make sure the to have the section name (${section.section_name})
-                    as the heading`
+                    as the heading. Always end with two line breaks.`
 
 
     const constructedPromptMessages = await client(constructPromptMaybeWithSelectedDocuments).executeFunction({
@@ -131,14 +101,11 @@ async function generateSection(section: Section){
         }
     })
 
-    const result = await openai_model.invoke(langchainMessages)
-
-    return result.content.toString()
-
+    return await openai_model.invoke(langchainMessages, config)
 }
 
 
-async function generateMemo(trial: string, ){
+async function generateMemo(trial: string, config?: RunnableConfig){
 
     console.log(`Generating memo for ${trial}`)
 
@@ -149,15 +116,29 @@ async function generateMemo(trial: string, ){
     })
 
     const structured_model = model.withStructuredOutput(Outline, {"name": "Outline"})
-    
-    const get_outline_prompt = `Create an outline of a case memorandum for the ${trial} trial, based on the memorandum provided. Give a list of sections, a short description of the type of content to be included in each section sufficient as instruction to fill it with more detail later, and a description of the structure and format of each section (tables, bullet points, etc). Respond with valid JSON formatted as follows:\n\n[{{\"section_name\": SECTION_NAME, \"section_description\": SECTION_DESCRIPTION \"section_formatting\": SECTION_FORMATTING}}...]`
 
-    console.log("outline prompt")
-    console.log(get_outline_prompt)
+    const example = await getExampleDocText()
+
+    var exampleText = ""
+    if (example !== undefined) {
+        console.log(`Got example text of length: ${example.length}`)
+
+        exampleText = "Make sure to write in the same style as the following example document. Use the same structure, "+
+            "organization and order of presentation of information, and detail. Make absolutely sure not to use any of the actual information from the example, "+
+            "only use information present in the relevant transcript pages. The example is just to show how your answer should be structured and presented. "+
+            "Here is the example document:\n\n"+
+            example
+    }
+    
+    const get_outline_prompt = `Create an outline of a case memorandum for the ${trial} trial, based on the example memorandum provided. Give a list of sections, a short description of the type of content to be included in each section sufficient as instruction to fill it with more detail later, and a description of the structure and format of each section (tables, bullet points, etc). Respond with valid JSON formatted as follows:\n\n[{{\"section_name\": SECTION_NAME, \"section_description\": SECTION_DESCRIPTION \"section_formatting\": SECTION_FORMATTING}}...]`
 
     const prompt_template = ChatPromptTemplate.fromMessages([
+        ["user", exampleText],
         ["user", get_outline_prompt]
     ])
+
+    console.log("Outline and example prompt")
+    console.log(prompt_template)
 
     const get_outline_chain = prompt_template.pipe(structured_model)
     const outline = await get_outline_chain.invoke({trial})
@@ -168,17 +149,17 @@ async function generateMemo(trial: string, ){
     var sections = []
 
     // One at a time or we'll get 429s
-    for (var i = 0; i < 1; i++) {//outline.sections.length; i++) {
-        var written_section = await generateSection(outline.sections[i])
+    for (var i = 0; outline.sections.length; i++) {
+        var written_section = await generateSection(outline.sections[i], config)
         sections.push(written_section)
     }
     
     console.log("sections:")
     console.log(sections)
 
-    //const sections = Promise.all(outline.sections.map(generateSection))
+    console.log(sections.join("\n\n"))
 
-    return sections.join("\n\n")
+    return ""
 }
 
 
@@ -194,13 +175,15 @@ async function invokeWithExample(
 
     var new_messages = []
 
+    options.tags = ["startingMemoGen"]
+
     if (tool_call.tool_calls !== undefined) {
-        const toolMessage = memoCreator.invoke(tool_call.tool_calls[0], options)
+        const toolMessage = memoCreator.stream(tool_call.tool_calls[0], options)
         new_messages.push(toolMessage)
     }
 
-    console.log("new messages")
+    console.log("tool messages")
     console.log(new_messages)
 }
 
-export {invokeWithExample}
+export {invokeWithExample, toolStartMessages}

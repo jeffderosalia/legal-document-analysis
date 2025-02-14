@@ -6,18 +6,23 @@ import {
   AIMessage,
   BaseMessage, 
   AIMessageChunk,
+  ToolMessage,
 } from "@langchain/core/messages";
 import { BaseCallbackHandler } from "@langchain/core/callbacks/base";
-import { StreamingCallback, StreamingCallbackEnd, Provider, Message, ChatOptions  } from "../types";
-import { invokeWithExample } from "./gen_with_example";
+import { StreamingCallback, StreamingCallbackEnd, Provider, Message, ChatOptions, ToolCallbackStart, ToolCallbackEnd  } from "../types";
+import { invokeWithExample, toolStartMessages } from "./gen_with_example";
 import { BaseLanguageModelInput } from "@langchain/core/language_models/base";
+import { Serialized } from "@langchain/core/load/serializable";
 
 // Streaming handler class
 class StreamingHandler extends BaseCallbackHandler {
     get name(): string {
         return "StreamingHandler";
     }
-    constructor(private onToken: StreamingCallback, private onComplete?: StreamingCallbackEnd) {
+    constructor(private onToken: StreamingCallback,
+                private onComplete?: StreamingCallbackEnd,
+                private onToolStart?: ToolCallbackStart,
+                private onToolEnd?: ToolCallbackEnd) {
       super();
     }
   
@@ -33,11 +38,26 @@ class StreamingHandler extends BaseCallbackHandler {
     async handleChainStart(): Promise<void> {}
     async handleChainEnd(): Promise<void> {}
     async handleChainError(): Promise<void> {}
-    async handleToolStart(): Promise<void> {
-      console.log("tool started")
+    async handleToolStart(
+      tool: Serialized,
+      input: string,
+      runId: string,
+      parentRunId: string,
+      tags: string[])
+      : Promise<void> {
+        if (this.onToolStart) {
+          this.onToolStart(tool, input, runId, parentRunId, tags)
+        }
     }
-    async handleToolEnd(): Promise<void> {
-      console.log("tool finished")
+    async handleToolEnd(
+      output: ToolMessage,
+      runId: string,
+      parentRunId?: string | undefined,
+      tags?: string[] | undefined)
+      : Promise<void> {
+        if (this.onToolEnd) {
+          this.onToolEnd(output, runId, parentRunId, tags)
+        }
     }
     async handleToolError(): Promise<void> {}
 }
@@ -62,7 +82,9 @@ export async function chat(
     streaming = false, 
     temperature = 1, 
     onToken,
-    onComplete
+    onComplete,
+    onToolStart,
+    onToolEnd
   } = options;
 
   // Convert messages to LangChain format
@@ -96,7 +118,7 @@ export async function chat(
 
   // Setup streaming handler if needed
   const callbacks = streaming && onToken 
-    ? [new StreamingHandler(onToken, onComplete)]
+    ? [new StreamingHandler(onToken, onComplete, onToolStart, onToolEnd)]
     : undefined;
 
   try {

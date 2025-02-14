@@ -14,6 +14,8 @@ import { Document, Message, Provider, MessageGroup } from '../types';
 import { Osdk  } from "@osdk/client";
 import { FileCollection, createChatLog } from "@legal-document-analysis/sdk";
 import {Header} from '../components/Header';
+import { Serialized } from '@langchain/core/load/serializable';
+import { ToolMessage } from '@langchain/core/messages';
 
 type UIProvider = {
   id: 'chatgpt' | 'anthropic' | 'anthropic_with_example';
@@ -189,19 +191,40 @@ const DocumentChat: React.FC = () => {
   
     await Promise.all(enabledProviders.map(async (p, index) => {
       let fullResponse = '';
-  
+
+      const writeToChat = (token: string) => {
+        fullResponse += token;
+        const newMessages = [...messages];
+        newMessages[newMessages.length-1].answers[index].content = fullResponse;
+        setMessages(newMessages);
+      }
+
+      const saveMessage = () => {
+        if (index === 0) {
+          storeChatMessage(messages[messages.length-1])
+        }
+      }
+
       await chat(p.provider, p.model, allMessages, p.apiKey, {
         streaming: true,
-        onToken: (token) => {
-          fullResponse += token;
-          const newMessages = [...messages];
-          newMessages[newMessages.length-1].answers[index].content = fullResponse;
-          setMessages(newMessages);
+        onToken: writeToChat,
+        onComplete: saveMessage,
+        onToolStart: (
+          _tool: Serialized,
+          _input: string,
+          _runId: string,
+          _parentRunId: string,
+          tags: string[]) => {
+          console.log("tool started")
+          console.log(tags)
         },
-        onComplete: () => {
-          if (index === 0) {
-            storeChatMessage(messages[messages.length-1])
-          }
+        onToolEnd: (
+          _output: ToolMessage,
+          _runId: string,
+          _parentRunId?: string | undefined,
+          _tags?: string[] | undefined) => {
+            //saveMessage()
+            console.log("tool finished")
         }
       });
     }));
@@ -355,7 +378,7 @@ const DocumentChat: React.FC = () => {
             <button onClick={handleNewChat}><MessageSquarePlus /></button>
           </div>
           <ul>
-            {recentChats && [...recentChats].slice(0, 5).reverse().map(c => (
+            {recentChats && [...recentChats].reverse().map(c => (
               <li key={c[0].threadId}><a onClick={() => handleGetChat(c)}><MessagesSquare width="16px" height="16px" /> {c[0].message}</a></li>
             ))}
           </ul>

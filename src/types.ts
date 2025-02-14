@@ -1,3 +1,6 @@
+import { Serialized } from "@langchain/core/load/serializable";
+import { ToolMessage } from "@langchain/core/messages";
+
 export interface Document {
   id: string;
   name: string;
@@ -9,8 +12,22 @@ export interface DocumentNode extends Document {
   children: DocumentNode[];
 }
 export type Provider = "openai" | "anthropic" | "anthropic_with_example";
+
 export type StreamingCallback = (token: string) => void;
 export type StreamingCallbackEnd = () => void;
+
+export type ToolCallbackStart = (
+  tool: Serialized,
+  input: string,
+  runId: string,
+  parentRunId: string,
+  tags: string[]) => void;
+export type ToolCallbackEnd = (
+  output: ToolMessage,
+  runId: string,
+  parentRunId?: string | undefined,
+  tags?: string[] | undefined) => void;
+
 export type MessageRole = "system" | "user" | "assistant";
 
 export interface OSDKMessage {
@@ -25,7 +42,7 @@ export interface Message {
 }
 
 export interface MessageGroup {
-  groupId?: string; 
+  groupId?: string;
   question: Message;
   answers: Message[];
   when: Date
@@ -36,5 +53,6 @@ export interface ChatOptions {
   temperature?: number;
   onToken?: StreamingCallback;
   onComplete?: StreamingCallbackEnd;
+  onToolStart?: ToolCallbackStart;
+  onToolEnd?: ToolCallbackEnd
 }
-  
