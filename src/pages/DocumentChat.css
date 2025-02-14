@@ -9,6 +9,43 @@
   background: #ffffff;
   overflow-x: hidden;
 }
+section {
+  position: relative;
+}
+h1, h2, h3, h4, h5, h6 {
+  margin:0;
+  padding: 0;
+}
+
+
+input[type="checkbox"] {
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  border: 2px solid #6d6d6d;
+  border-radius: 4px;
+  background: #f0f0f0;
+  cursor: pointer;
+  display: inline-block;
+  vertical-align: middle;
+}
+
+input[type="checkbox"]:checked {
+  background-color: #007aff; /* macOS blue */
+  border-color: #007aff;
+  position: relative;
+}
+
+input[type="checkbox"]:checked::after {
+  content: '✓';
+  font-size: 12px;
+  color: white;
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  font-weight: bold;
+}
 
 .sidebar {
   width: 256px;
@@ -23,7 +60,29 @@
   font-size: 14px;
   text-align: left;
 }
+.sidebar h5 {
+  padding-bottom: 10px;
+}
+.sidebar section {
+  height: 40%;
+  overflow-y: auto;
+}
+.sidebar section:nth-child(3) {
+  height: 120px;
+}
 
+.chevron {
+  width: 16px;
+  height: 16px;
+  transition: transform 0.2s;
+}
+.p5 {
+  padding-right: 5px;
+}
+
+.chevron.expanded {
+  transform: rotate(90deg);
+}
 .sidebar-header {
   font-weight: 500;
   margin-bottom: 16px;
@@ -40,7 +99,9 @@
   padding:0;
   margin: 0;
 }
-
+.sidebar .recent-chats li svg {
+  padding-right: 5px;
+}
 .sidebar .recent-chats {
   margin-top: 20px;
   padding: 1rem;
@@ -99,6 +160,21 @@
   font-weight: 500;
   margin: 0;
 }
+.tree-item {
+  display: flex;
+  align-items: center;
+  padding: 6px;
+  margin: 2px 0;
+  border-radius: 4px;
+  cursor: pointer;
+}
+.tree-item.file .x {
+  display: none;
+}
+.tree-item.file:hover .x {
+   display: block;
+}
+
 
 .messages-container {
   background-color: #f9fafb; /* Soft light background */

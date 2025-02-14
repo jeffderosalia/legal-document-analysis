@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import "./DocumentChat.css";
-import { ChevronRight, File, Folder, MessagesSquare, MessageSquarePlus} from 'lucide-react';
+import { ChevronRight, File, Folder, MessagesSquare, SquarePen} from 'lucide-react';
 import { ChatDisplay } from '../components/ChatDisplay';
 import { ChatInput } from '../components/ChatInput';
 import {CreateCollectionModal} from '../components/CreateCollectionModal'
@@ -335,7 +335,7 @@ const DocumentChat: React.FC = () => {
             </span>
           )}
           
-          {isFolder ? <Folder className="icon" /> : <File className="icon" />}
+          {isFolder ? <Folder className="icon p5" /> : <File className="icon p5" />}
           <span className="item-name">{item.name}</span>
           {!isFolder && parent != null &&  (
             <a className="x" onClick={() => handleRemoveFromCollection(item.id, parent)}>X</a>
@@ -375,7 +375,7 @@ const DocumentChat: React.FC = () => {
         <section className="recent-chats">
           <h5>Recent</h5>
           <div className="sidebar-header">
-            <button onClick={handleNewChat}><MessageSquarePlus stroke='#333'  /></button>
+            <button onClick={handleNewChat}><SquarePen stroke='#666'  /></button>
           </div>
           <ul>
             {recentChats && [...recentChats].reverse().map(c => (

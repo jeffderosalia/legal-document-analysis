@@ -46,7 +46,7 @@
   bottom: 1px;
   right: 1px;
   font-size: 0.75rem;
-  background-color: #ddd; /* Light gray for provider tag */
+  background-color: transparent; /* Light gray for provider tag */
   color: #555;
   padding: 3px 3px 0 3px;
   border-radius: 5px;

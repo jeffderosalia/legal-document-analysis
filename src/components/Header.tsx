@@ -21,7 +21,7 @@ export const Header: React.FC<HeaderProps> = ({ givenName }) => (
           </div>
         </div>
         <div className="header-right">
-          <div style={{color: '#CDCDCD', marginRight: '5px'}}>Hi, {givenName}</div>
+          <div style={{color: '#333', marginRight: '5px'}}>Hi, {givenName}</div>
           <span className="beta-badge">Beta</span>
         </div>
       </div>
