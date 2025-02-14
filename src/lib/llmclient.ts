@@ -75,6 +75,7 @@ export async function chat(
   provider: Provider,
   model: string,
   messages: Message[],
+  mediaItems: string[],
   apiKey: string,
   options: ChatOptions = {}
 ) {
@@ -123,10 +124,10 @@ export async function chat(
 
   try {
     if (provider === "anthropic_with_example"){
-      const response = await invokeWithExample(model_instance, langchainMessages, { callbacks });
+      const response = await invokeWithExample(model_instance, langchainMessages, mediaItems, { callbacks });
       console.log("Complete doc:")
       console.log(response)
-      return response;
+      return response?.content;
     } else {
       const response = await basic_invoke(model_instance, langchainMessages, { callbacks });
       return response.content;
