@@ -13,10 +13,12 @@ import { chat } from '../lib/llmclient';
 import { Document, Message, Provider, MessageGroup } from '../types';
 import { Osdk  } from "@osdk/client";
 import { FileCollection, createChatLog } from "@legal-document-analysis/sdk";
-import {Header} from '../components/Header'
+import {Header} from '../components/Header';
+import { Serialized } from '@langchain/core/load/serializable';
+import { ToolMessage } from '@langchain/core/messages';
 
 type UIProvider = {
-  id: 'chatgpt' | 'anthropic';
+  id: 'chatgpt' | 'anthropic' | 'anthropic_with_example';
   provider: Provider;
   model: string;
   name: string;
@@ -37,7 +39,8 @@ const DocumentChat: React.FC = () => {
   const [questionCount, setQuestionCount] = useState<number>(0);
   const [providers, setProviders] = useState<UIProvider[]>([
     { id: 'chatgpt', provider: 'openai', model: 'gpt-4o-mini', name: 'ChatGPT', enabled: true, apiKey: process.env.VITE_OPENAI_API_KEY || "x" },
-    { id: 'anthropic', provider: 'anthropic', model: 'claude-3-5-sonnet-20241022',name: 'Anthropic', enabled: false, apiKey: process.env.VITE_ANTHROPIC_API_KEY || "x" }
+    { id: 'anthropic', provider: 'anthropic', model: 'claude-3-5-sonnet-20241022',name: 'Anthropic', enabled: false, apiKey: process.env.VITE_ANTHROPIC_API_KEY || "x" },
+    { id: 'anthropic_with_example', provider: 'anthropic_with_example', model: 'claude-3-5-sonnet-20241022',name: 'Anthropic + Example Memo', enabled: false, apiKey: process.env.VITE_ANTHROPIC_API_KEY || "x" }
   ]);
 
   const actions = [
@@ -188,19 +191,40 @@ const DocumentChat: React.FC = () => {
   
     await Promise.all(enabledProviders.map(async (p, index) => {
       let fullResponse = '';
-  
+
+      const writeToChat = (token: string) => {
+        fullResponse += token;
+        const newMessages = [...messages];
+        newMessages[newMessages.length-1].answers[index].content = fullResponse;
+        setMessages(newMessages);
+      }
+
+      const saveMessage = () => {
+        if (index === 0) {
+          storeChatMessage(messages[messages.length-1])
+        }
+      }
+
       await chat(p.provider, p.model, allMessages, p.apiKey, {
         streaming: true,
-        onToken: (token) => {
-          fullResponse += token;
-          const newMessages = [...messages];
-          newMessages[newMessages.length-1].answers[index].content = fullResponse;
-          setMessages(newMessages);
+        onToken: writeToChat,
+        onComplete: saveMessage,
+        onToolStart: (
+          _tool: Serialized,
+          _input: string,
+          _runId: string,
+          _parentRunId: string,
+          tags: string[]) => {
+          console.log("tool started")
+          console.log(tags)
         },
-        onComplete: () => {
-          if (index === 0) {
-            storeChatMessage(messages[messages.length-1])
-          }
+        onToolEnd: (
+          _output: ToolMessage,
+          _runId: string,
+          _parentRunId?: string | undefined,
+          _tags?: string[] | undefined) => {
+            //saveMessage()
+            console.log("tool finished")
         }
       });
     }));
