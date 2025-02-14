@@ -1,48 +1,54 @@
 .message-wrapper .message {
-    text-align: left;
-    max-width: calc(80% - 24px);
-    min-width: 40%;
-    min-height: 29px;
-    padding: 12px;
-    border-radius: 8px;
-    border: 1px solid #e5e5e5;
-    padding: 12px; 
-    position: relative;
-  }
-  
-  /* Right align user messages */
-  .message-wrapper.user {
-    justify-content: flex-end;
-  }
-  .message-wrapper.user .message {
-    background: #374151;
-    color: #D1D5DB;
-    border: none;
-  }
-  .message-wrapper.assistant .message {
-    background: #374151;
-    background: #3B82F6;
-    color: #FFF;
-  }
-  .message-wrapper .message a {
-    color: #cdcdcd;
-  }
-  /* Left align assistant messages */
-  .message-wrapper.assistant {
-    justify-content: flex-start;
-  }
-  
-  /* When message-wrapper has two messages, place them side by side */
-  .message-wrapper:has(.message + .message) .message {
-    width: 48%;
-  }
-  .message .provider {
-    position: absolute;
-    bottom: 1px;
-    right: 1px;
-    font-size: 0.75rem;
-    background-color: #111827;;
-    padding:3px 3px 0 3px;
-    border-radius: 5px;
-    opacity: .8;
-  }
+  text-align: left;
+  max-width: calc(80% - 24px);
+  min-width: 40%;
+  min-height: 29px;
+  padding: 12px;
+  border-radius: 8px;
+  border: 1px solid #ddd;
+  position: relative;
+  background: #ffffff; /* Light mode background */
+  color: #333;
+}
+
+/* Right align user messages */
+.message-wrapper.user {
+  justify-content: flex-end;
+}
+.message-wrapper.user .message {
+  background: #e0f2fe; /* Light blue for user messages */
+  color: #035388;
+  border: 1px solid #b3e0f8;
+}
+
+/* Left align assistant messages */
+.message-wrapper.assistant {
+  justify-content: flex-start;
+}
+.message-wrapper.assistant .message {
+  background: #f3f4f6; /* Soft gray for assistant messages */
+  color: #333;
+}
+
+/* Links inside messages */
+.message-wrapper .message a {
+  color: #0073e6; /* Blue links for readability */
+}
+
+/* When message-wrapper has two messages, place them side by side */
+.message-wrapper:has(.message + .message) .message {
+  width: 48%;
+}
+
+/* Provider Tag */
+.message .provider {
+  position: absolute;
+  bottom: 1px;
+  right: 1px;
+  font-size: 0.75rem;
+  background-color: #ddd; /* Light gray for provider tag */
+  color: #555;
+  padding: 3px 3px 0 3px;
+  border-radius: 5px;
+  opacity: 0.8;
+}

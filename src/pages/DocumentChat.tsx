@@ -289,26 +289,26 @@ const DocumentChat: React.FC = () => {
         >
           {isFolder ? (
             <>
-              <div className="checkbox-wrapper">
+              <span className="checkbox-wrapper">
                 <input
                   type="checkbox"
                   checked={isSelected}
                   onChange={() => toggleCollection(item)}
                 />
-              </div>
+              </span>
               <ChevronRight
-                className={`chevron ${isExpanded ? 'expanded' : ''}`}
+                className={`icon chevron ${isExpanded ? 'expanded' : ''}`}
                 onClick={() => toggleFolder(item.id)}
             />
             </>
           ) : (
-            <div className="checkbox-wrapper">
+            <span className="checkbox-wrapper">
             <input
               type="checkbox"
               checked={isSelected}
               onChange={() => toggleDocument(item)}
             />
-            </div>
+            </span>
           )}
           
           {isFolder ? <Folder className="icon" /> : <File className="icon" />}
@@ -351,7 +351,7 @@ const DocumentChat: React.FC = () => {
         <section className="recent-chats">
           <h5>Recent</h5>
           <div className="sidebar-header">
-            <button onClick={handleNewChat}><MessageSquarePlus /></button>
+            <button onClick={handleNewChat}><MessageSquarePlus stroke='#333'  /></button>
           </div>
           <ul>
             {recentChats && [...recentChats].reverse().map(c => (

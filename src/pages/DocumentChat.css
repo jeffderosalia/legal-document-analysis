@@ -1,4 +1,4 @@
-/* Same CSS as before */
+/* ChatGPT Light Mode CSS */
 #root {
   width: 100%;
   color: #333;
@@ -6,15 +6,15 @@
 .app-container {
   display: flex;
   height: 100vh;
-  background: #f5f5f5;
+  background: #ffffff;
   overflow-x: hidden;
 }
 
 .sidebar {
   width: 256px;
-  background: #1F2937;
-  color: #ccc;
-  border-right: 1px solid #374151;
+  background: #f3f4f6; /* Light gray */
+  color: #333;
+  border-right: 1px solid #ddd;
   padding: 16px;
   overflow-y: auto;
   display: flex;
@@ -44,7 +44,7 @@
 .sidebar .recent-chats {
   margin-top: 20px;
   padding: 1rem;
-  border-top: 1px solid #eee;
+  border-top: 1px solid #ddd;
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
@@ -66,101 +66,21 @@
 }
 .sidebar .recent-chats li a{
   cursor: pointer;
+  color: #333;
 }    
-.sidebar .recent-chats li a:hover{
-  background-color: midnightblue;
-}    
-.sidebar .recent-chats li svg {
-  padding-right:5px;
-}
 
-.sidebar .recent-chats a {
-  color:white;
-}
+.sidebar .recent-chats li a:hover{
+  background-color: #e5e7eb;
+}    
+
 .sidebar .provider-options {
   margin-top: auto;
   padding: 1rem;
-  border-top: 1px solid #eee;
+  border-top: 1px solid #ddd;
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
   text-align: left;
-}
-.provider-options label {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
- }
-.tree-item {
-  display: flex;
-  align-items: center;
-  padding: 6px;
-  margin: 2px 0;
-  border-radius: 4px;
-  cursor: pointer;
-}
-.tree-item.file .x {
-  display: none;
-}
-.tree-item.file:hover .x {
-   display: block;
-}
-
-
-.sidebar .collections-container {
-  overflow-y: auto;
-}
-.sidebar section {
-  position: relative;
-}
-
-.chevron {
-  width: 16px;
-  height: 16px;
-  margin-right: 8px;
-  transition: transform 0.2s;
-}
-
-.chevron.expanded {
-  transform: rotate(90deg);
-}
-
-.checkbox-wrapper {
-  margin-right: 8px;
-  display: flex;
-  align-items: center;
-}
-input[type="checkbox"] {
-  width: 16px;
-  height: 16px;
-  appearance: none;
-  -webkit-appearance: none;
-  border: 1px solid #60A5FA;
-  border-radius: 3px;
-  background: white;
-  cursor: pointer;
-}
-
-input[type="checkbox"]:checked {
-  background: #60A5FA;
-  border-color: #60A5FA;
-  position: relative;
-}
-
-input[type="checkbox"]:checked::after {
-  content: '✓';
-  color: white;
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  transform: translate(-50%, -50%);
-  font-size: 12px;
-}
-.icon {
-  width: 16px;
-  height: 16px;
-  margin-right: 8px;
-  color: #666;
 }
 
 .main-content {
@@ -171,24 +91,18 @@ input[type="checkbox"]:checked::after {
 
 .header {
   padding: 16px;
-  background: white;
-  border-bottom: 1px solid #e5e5e5;
-}
-.header h2 {
-  margin: 10px;
+  background: #ffffff;
+  border-bottom: 1px solid #ddd;
 }
 .header h2 {
   font-size: 18px;
   font-weight: 500;
   margin: 0;
 }
-h5 {
-  margin:0;
-}
 
 .messages-container {
-  background-color: #111827;
-  width: 99%;
+  background-color: #f9fafb; /* Soft light background */
+  width: 100%;
   height: 100%;
   display: flex;
   flex-direction: column;
@@ -207,22 +121,19 @@ h5 {
 .chat-input {
   padding: 16px;
   background: white;
-  border-top: 1px solid #e5e5e5;
+  border-top: 1px solid #ddd;
   display: flex;
   gap: 8px;
 }
-
 
 .chat-input button {
   display: flex;
   align-items: center;
   gap: 8px;
   padding: 8px 16px;
-  background: #0066ff;
+  background: #10a37f;
   color: white;
   border: none;
-  border-radius: 4px;
-  cursor: pointer;
   border-radius: 35px;
   height: 55px;
   margin: auto;
@@ -230,31 +141,31 @@ h5 {
 .chat-input textarea {
   flex: 1;
   padding: 8px 12px;
-  border: 1px solid #e5e5e5;
+  border: 1px solid #ddd;
   border-radius: 4px;
   color: #333;
   font-size: 14px;
-  resize: vertical;  /* Allows vertical resizing only */
-  min-height: 60px;  /* Minimum height */
-  font-family: inherit;  /* Maintains consistent font */
+  resize: vertical;
+  min-height: 60px;
+  font-family: inherit;
 }
 .chat-input textarea:focus {
   outline: none;
-  border-color: #0066ff;
-  box-shadow: 0 0 0 2px rgba(0,102,255,0.2);
+  border-color: #10a37f;
+  box-shadow: 0 0 0 2px rgba(16, 163, 127, 0.2);
 }
-  
-
 .chat-input button:hover {
-  background: #0052cc;
+  background: #0e8b6d;
 }
+
+/* Table Styling */
 .messages-container table {
   width: 100%;
   border-collapse: collapse;
   margin: 20px 0;
   font-size: 14px;
-  background-color: #bcbcbc;
-  color: #efefef;
+  background-color: #ffffff;
+  color: #333;
 }
 
 .messages-container th, 
@@ -265,14 +176,17 @@ h5 {
 }
 
 .messages-container th {
-  background-color: #374181;
+  background-color: #e5e7eb;
   font-weight: bold;
 }
 
 .messages-container tr:nth-child(even) {
-  background-color: #374161;
+  background-color: #f3f4f6;
 }
 .messages-container tr:nth-child(odd) {
-  background-color: #374151;
+  background-color: #ffffff;
 }
-
+.icon {
+  height: 16px;
+  width: 16px;
+}

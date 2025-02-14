@@ -20,7 +20,7 @@ export const GearMenu: React.FC<GearMenuProps> = ({ actions }) => {
   };
   return (
     <div className="gear-menu">
-      <Settings className="gear-icon" onClick={() => setIsOpen(!isOpen)} />
+      <Settings className="gear-icon"  stroke='#333' onClick={() => setIsOpen(!isOpen)} />
       {isOpen && (
         <div className="menu-popup">
           {actions.map((action, index) => (
