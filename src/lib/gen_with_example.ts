@@ -43,20 +43,7 @@ const memoSchema = z.object({
   });
 
 
-const memoCreator = tool(
-    async ({trial}, config?: RunnableConfig) : Promise<string> => {
-        const memo = await generateMemo(trial, config)
-        return memo
-    },
-    {
-        name: "memoCreator",
-        description: "Use this if asked to generate a memo about a trial",
-        schema: memoSchema,
-    }
-)
-
-
-async function generateSection(section: Section, config?: RunnableConfig){
+async function generateSection(section: Section, mediaItems: string[], config?: RunnableConfig){
 
     console.log(`Generating section: ${section.section_name}`)
 
@@ -81,10 +68,10 @@ async function generateSection(section: Section, config?: RunnableConfig){
                     and make sure the to have the section name (${section.section_name})
                     as the heading. Always end with two line breaks.`
 
-
     const constructedPromptMessages = await client(constructPromptMaybeWithSelectedDocuments).executeFunction({
         "question": prompt,
         "history_string": '',
+        "media_items": mediaItems,
         "k": 100 // Max number of document chunks to retrieve
     })
 
@@ -105,7 +92,7 @@ async function generateSection(section: Section, config?: RunnableConfig){
 }
 
 
-async function generateMemo(trial: string, config?: RunnableConfig){
+async function generateMemo(trial: string, mediaItems: string[], config?: RunnableConfig){
 
     console.log(`Generating memo for ${trial}`)
 
@@ -150,7 +137,7 @@ async function generateMemo(trial: string, config?: RunnableConfig){
 
     // One at a time or we'll get 429s
     for (var i = 0; outline.sections.length; i++) {
-        var written_section = await generateSection(outline.sections[i], config)
+        var written_section = await generateSection(outline.sections[i], mediaItems, config)
         sections.push(written_section)
     }
     
@@ -158,32 +145,38 @@ async function generateMemo(trial: string, config?: RunnableConfig){
     console.log(sections)
 
     console.log(sections.join("\n\n"))
-
-    return ""
 }
 
 
 async function invokeWithExample(
     model_instance: ChatOpenAI<ChatOpenAICallOptions> | ChatAnthropic,
     messages: BaseLanguageModelInput,
+    mediaItems: string[],
     options: ChatOpenAICallOptions & ChatAnthropicCallOptions
   ) {
+
+    const memoCreator = tool(
+        async ({trial}, config?: RunnableConfig) : Promise<void> => {
+            await generateMemo(trial, mediaItems, config)
+        },
+        {
+            name: "memoCreator",
+            description: "Use this if asked to generate a memo about a trial",
+            schema: memoSchema,
+        }
+    )
 
     const model_with_tools = model_instance.bindTools([memoCreator])
 
     const tool_call = await model_with_tools.invoke(messages)
-
-    var new_messages = []
-
     options.tags = ["startingMemoGen"]
 
-    if (tool_call.tool_calls !== undefined) {
-        const toolMessage = memoCreator.stream(tool_call.tool_calls[0], options)
-        new_messages.push(toolMessage)
+    if (tool_call.tool_calls !== undefined && tool_call.tool_calls.length > 0) {
+        memoCreator.stream(tool_call.tool_calls[0], options)
+        return undefined
     }
 
-    console.log("tool messages")
-    console.log(new_messages)
+    return tool_call
 }
 
 export {invokeWithExample, toolStartMessages}
