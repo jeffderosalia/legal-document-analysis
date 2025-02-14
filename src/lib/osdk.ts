@@ -30,7 +30,7 @@ type askTrialDataRAGCB = (n: any[]) => any;
 const askTrialDataRAG = async (question: string, history: OSDKMessage[] , callback: askTrialDataRAGCB) =>  {
   const result = await client(semanticSearchGeneratePrompt).executeFunction({
     "question": question,
-    "history": history
+    "history": history,
   });
   callback(result);
 };
@@ -39,7 +39,8 @@ const createPrompt = async (question: string, mediaItems: string[], callback: as
   const result = await client(constructPromptMaybeWithSelectedDocuments).executeFunction({
     "question": question,
     "history_string": '',
-    "media_items": mediaItems
+    "media_items": mediaItems,
+    "k": 100 // Max number of document chunks to retrieve
   });
   callback(result);
 };
