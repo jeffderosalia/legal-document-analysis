@@ -1,14 +1,16 @@
-import { ChatOpenAI } from "@langchain/openai";
-import { ChatAnthropic } from "@langchain/anthropic";
+import { ChatOpenAI, ChatOpenAICallOptions } from "@langchain/openai";
+import { ChatAnthropic, ChatAnthropicCallOptions } from "@langchain/anthropic";
 import { 
   HumanMessage, 
   SystemMessage, 
   AIMessage,
-  BaseMessage 
+  BaseMessage, 
+  AIMessageChunk,
 } from "@langchain/core/messages";
 import { BaseCallbackHandler } from "@langchain/core/callbacks/base";
 import { StreamingCallback, StreamingCallbackEnd, Provider, Message, ChatOptions  } from "../types";
-import { getExampleDocText } from "./gen_with_example";
+import { invokeWithExample } from "./gen_with_example";
+import { BaseLanguageModelInput } from "@langchain/core/language_models/base";
 
 // Streaming handler class
 class StreamingHandler extends BaseCallbackHandler {
@@ -31,11 +33,23 @@ class StreamingHandler extends BaseCallbackHandler {
     async handleChainStart(): Promise<void> {}
     async handleChainEnd(): Promise<void> {}
     async handleChainError(): Promise<void> {}
-    async handleToolStart(): Promise<void> {}
-    async handleToolEnd(): Promise<void> {}
+    async handleToolStart(): Promise<void> {
+      console.log("tool started")
+    }
+    async handleToolEnd(): Promise<void> {
+      console.log("tool finished")
+    }
     async handleToolError(): Promise<void> {}
 }
   
+// input: BaseLanguageModelInput, options?: (ChatAnthropicCallOptions & ChatOpenAICallOptions) | undefined
+async function basic_invoke(
+  model_instance: ChatOpenAI<ChatOpenAICallOptions> | ChatAnthropic,
+  messages: BaseLanguageModelInput,
+  options: ChatOpenAICallOptions & ChatAnthropicCallOptions
+): Promise<AIMessageChunk> {
+  return model_instance.invoke(messages, options)
+}
 
 export async function chat(
   provider: Provider,
@@ -52,7 +66,7 @@ export async function chat(
   } = options;
 
   // Convert messages to LangChain format
-  const langchainMessages: BaseMessage[] = messages.map(msg => {
+  var langchainMessages: BaseMessage[] = messages.map(msg => {
     switch (msg.role) {
       case "system":
         return new SystemMessage(msg.content);
@@ -65,24 +79,7 @@ export async function chat(
     }
   });
 
-  const example = await getExampleDocText()
-
-  var exampleText = ""
-  if (example !== undefined) {
-    console.log(`Got example text of length: ${example.length}`)
-
-    exampleText = "Make sure to write in the same style as the following example document. Use the same structure, "+
-        "organization and order of presentation of information, and detail. Make absolutely sure not to use any of the actual information from the example, "+
-        "only use information present in the relevant transcript pages. The example is just to show how your answer should be structured and presented. "+
-        "Here is the example document:\n\n"+
-        example
-  }
-
-  const exampleMessage = new HumanMessage(exampleText)
-
-  const augmentedMessages = [langchainMessages[0], exampleMessage, langchainMessages[1]]
-
-  // Setup model based on provider
+  // Setup model based on provider, note that anything not "openai" falls through to Anthropic
   const model_instance = provider === "openai" 
     ? new ChatOpenAI({
         modelName: model,
@@ -103,8 +100,15 @@ export async function chat(
     : undefined;
 
   try {
-    const response = await model_instance.invoke(augmentedMessages, { callbacks });
-    return response.content;
+    if (provider === "anthropic_with_example"){
+      const response = await invokeWithExample(model_instance, langchainMessages, { callbacks });
+      console.log("Complete doc:")
+      console.log(response)
+      return response;
+    } else {
+      const response = await basic_invoke(model_instance, langchainMessages, { callbacks });
+      return response.content;
+    }
   } catch (error) {
     console.error(`Error with ${provider}:`, error);
     throw error;

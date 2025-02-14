@@ -8,7 +8,7 @@ export interface Document {
 export interface DocumentNode extends Document {
   children: DocumentNode[];
 }
-export type Provider = "openai" | "anthropic";
+export type Provider = "openai" | "anthropic" | "anthropic_with_example";
 export type StreamingCallback = (token: string) => void;
 export type StreamingCallbackEnd = () => void;
 export type MessageRole = "system" | "user" | "assistant";

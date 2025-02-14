@@ -14,7 +14,6 @@ import { Document, Message, Provider, MessageGroup } from '../types';
 import { Osdk  } from "@osdk/client";
 import { FileCollection, createChatLog } from "@legal-document-analysis/sdk";
 import {Header} from '../components/Header';
-import {getExampleDocText} from '../lib/gen_with_example'
 
 type UIProvider = {
   id: 'chatgpt' | 'anthropic' | 'anthropic_with_example';
@@ -39,7 +38,7 @@ const DocumentChat: React.FC = () => {
   const [providers, setProviders] = useState<UIProvider[]>([
     { id: 'chatgpt', provider: 'openai', model: 'gpt-4o-mini', name: 'ChatGPT', enabled: true, apiKey: process.env.VITE_OPENAI_API_KEY || "x" },
     { id: 'anthropic', provider: 'anthropic', model: 'claude-3-5-sonnet-20241022',name: 'Anthropic', enabled: false, apiKey: process.env.VITE_ANTHROPIC_API_KEY || "x" },
-    { id: 'anthropic_with_example', provider: 'anthropic', model: 'claude-3-5-sonnet-20241022',name: 'Anthropic + Example Memo', enabled: false, apiKey: process.env.VITE_ANTHROPIC_API_KEY || "x" }
+    { id: 'anthropic_with_example', provider: 'anthropic_with_example', model: 'claude-3-5-sonnet-20241022',name: 'Anthropic + Example Memo', enabled: false, apiKey: process.env.VITE_ANTHROPIC_API_KEY || "x" }
   ]);
 
   const actions = [
@@ -187,9 +186,6 @@ const DocumentChat: React.FC = () => {
     allMessages[0].content += "\nCreate all tables using markdown";
     console.log("allMessages");
     console.log(allMessages);
-
-    const example_doc_text = await getExampleDocText()
-    console.log(example_doc_text)
   
     await Promise.all(enabledProviders.map(async (p, index) => {
       let fullResponse = '';
@@ -359,7 +355,7 @@ const DocumentChat: React.FC = () => {
             <button onClick={handleNewChat}><MessageSquarePlus /></button>
           </div>
           <ul>
-            {recentChats && [...recentChats].reverse().map(c => (
+            {recentChats && [...recentChats].slice(0, 5).reverse().map(c => (
               <li key={c[0].threadId}><a onClick={() => handleGetChat(c)}><MessagesSquare width="16px" height="16px" /> {c[0].message}</a></li>
             ))}
           </ul>
