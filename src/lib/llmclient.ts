@@ -10,7 +10,7 @@ import {
 } from "@langchain/core/messages";
 import { BaseCallbackHandler } from "@langchain/core/callbacks/base";
 import { StreamingCallback, StreamingCallbackEnd, Provider, Message, ChatOptions, ToolCallbackStart, ToolCallbackEnd  } from "../types";
-import { invokeWithExample, toolStartMessages } from "./gen_with_example";
+import { invokeWithExample } from "./gen_with_example";
 import { BaseLanguageModelInput } from "@langchain/core/language_models/base";
 import { Serialized } from "@langchain/core/load/serializable";
 
