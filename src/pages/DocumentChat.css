@@ -72,13 +72,16 @@ input[type="checkbox"]:checked::after {
   width: 0;
   padding: 0;
 }
+.sidebar .inner {
+  height: calc(100vh - 100px);
+}
 .sidebar.collapsed .inner{
   visibility: hidden;;
 }
 .nav-buttons {
   position: absolute;
   top: 5px;
-  left: 5px;
+  left: 15px;
   transition: left 0.3s ease;
 }
 .collapsed + .toggle-btn {
@@ -131,7 +134,7 @@ input[type="checkbox"]:checked::after {
 }
 .sidebar .recent-chats {
   margin-top: 20px;
-  padding: 1rem;
+  padding: 1rem 0;
   border-top: 1px solid #ddd;
   display: flex;
   flex-direction: column;
@@ -163,7 +166,7 @@ input[type="checkbox"]:checked::after {
 
 .sidebar .provider-options {
   margin-top: auto;
-  padding: 1rem;
+  padding: 1rem 0;
   border-top: 1px solid #ddd;
   display: flex;
   flex-direction: column;
@@ -175,9 +178,11 @@ input[type="checkbox"]:checked::after {
   flex: 1;
   display: flex;
   flex-direction: column;
+  height: 100vh;
 }
 
 .header {
+  flex-shrink: 0;
   padding: 16px;
   background: #ffffff;
   border-bottom: 1px solid #ddd;
@@ -213,6 +218,7 @@ input[type="checkbox"]:checked::after {
   padding: 20px 5px;
   gap: 20px;
   overflow-y: auto;
+  flex: 1;
 }
 
 .message-wrapper {

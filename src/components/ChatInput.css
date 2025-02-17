@@ -3,6 +3,7 @@
   border: 1px solid #ddd;
   padding: 12px;
   border-radius: 8px;
+  flex-shrink: 0;
 }
 
 .textarea-wrapper {
