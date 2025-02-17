@@ -26,7 +26,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({ onSendMessage }) => {
         rows={3}
         //onKeyDown={(e) => e.key === 'Enter' && handleSend()}
       />
-      <button className="send-button" onClick={handleSend}>
+      <button id="send-button" onClick={handleSend}>
         <Send className="send-icon" />
       </button>
       </div>

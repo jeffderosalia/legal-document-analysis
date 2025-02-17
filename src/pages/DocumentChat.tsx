@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import "./DocumentChat.css";
-import { ChevronRight, File, Folder, MessagesSquare, SquarePen} from 'lucide-react';
+import { ChevronRight, File, Folder, MessagesSquare, SquarePen, PanelLeft} from 'lucide-react';
 import { ChatDisplay } from '../components/ChatDisplay';
 import { ChatInput } from '../components/ChatInput';
 import {CreateCollectionModal} from '../components/CreateCollectionModal'
@@ -28,6 +28,7 @@ type UIProvider = {
 
 const DocumentChat: React.FC = () => {
   const [user, setUser] = useState<any>();
+  const [sidebarOpen, setSidebarOpen] = useState<boolean>(true);
   const [collections, setCollections] = useState<Osdk.Instance<FileCollection>[]>([]);
   const [documents, setDocuments] = useState<Document>();
   const [recentChats, setRecentChats]= useState<any[]>([])
@@ -353,51 +354,59 @@ const DocumentChat: React.FC = () => {
 
   return (
     <div className="app-container">
-      <div className="sidebar">        
-        <CreateCollectionModal
-          isOpen={isModalOpen}
-          onClose={() => setIsModalOpen(false)}
-          documents={selectedDocs}
-          onCreateCollection={handleCreateCollection}
-        />
-        <section className="collections-container">
-        <h5>Document Sets</h5>
-        <div className="sidebar-header">
-          <GearMenu actions={actions} />
+      <div className={sidebarOpen ? 'sidebar open' : 'sidebar collapsed'}>
+        <div className="nav-buttons">
+          <button title={sidebarOpen ? 'Collapse Sidebar' : 'Expand Sidebar'} className="toggle-sidebar button p5" onClick={()=> {setSidebarOpen(!sidebarOpen)}}><PanelLeft stroke='#666'  /></button>
+          <button title="Start New Chat" className={sidebarOpen ? 'd-none' : ''} onClick={handleNewChat}><SquarePen stroke='#666'  /></button>
+        </div>  
+        <div className="inner">
 
-          <div style={{display: 'none'}}>
-          <FileUpload onFileSelect={handleFileUpload} />
-          </div>
-        </div>
-
-        {documents && documents.children?.map(item => renderItem(item))}
-        </section>
-        <section className="recent-chats">
-          <h5>Recent</h5>
+          <CreateCollectionModal
+            isOpen={isModalOpen}
+            onClose={() => setIsModalOpen(false)}
+            documents={selectedDocs}
+            onCreateCollection={handleCreateCollection}
+          />
+          <section className="collections-container">
+          <h5>Document Sets</h5>
           <div className="sidebar-header">
-            <button onClick={handleNewChat}><SquarePen stroke='#666'  /></button>
+            <GearMenu actions={actions} />
+
+            <div style={{display: 'none'}}>
+            <FileUpload onFileSelect={handleFileUpload} />
+            </div>
           </div>
-          <ul>
-            {recentChats && [...recentChats].reverse().map(c => (
-              <li key={c[0].threadId}><a onClick={() => handleGetChat(c)}><MessagesSquare width="16px" height="16px" /> {c[0].message}</a></li>
-            ))}
-          </ul>
-        </section>
-        <section className="provider-options">
-          <h5>Select your Providers</h5>
-          {providers.map(provider => (
-            <label key={provider.id}>
-              <input 
-                type="checkbox"
-                checked={provider.enabled}
-                onChange={() => setProviders(prev => 
-                  prev.map(p => p.id === provider.id ? {...p, enabled: !p.enabled} : p)
-                )}
-              />
-              {provider.name}
-            </label>
-          ))}
+
+          {documents && documents.children?.map(item => renderItem(item))}
           </section>
+          <section className="recent-chats">
+            <h5>Recent</h5>
+            <div className="sidebar-header">
+              <button onClick={handleNewChat}><SquarePen stroke='#666'  /></button>
+            </div>
+            <ul>
+              {recentChats && [...recentChats].reverse().map(c => (
+                <li key={c[0].threadId}><a onClick={() => handleGetChat(c)}><MessagesSquare width="16px" height="16px" /> {c[0].message}</a></li>
+              ))}
+            </ul>
+          </section>
+          <section className="provider-options">
+            <h5>Select your Providers</h5>
+            {providers.map(provider => (
+              <label key={provider.id}>
+                <input 
+                  type="checkbox"
+                  checked={provider.enabled}
+                  onChange={() => setProviders(prev => 
+                    prev.map(p => p.id === provider.id ? {...p, enabled: !p.enabled} : p)
+                  )}
+                />
+                {provider.name}
+              </label>
+            ))}
+            </section>
+          </div>
+
       </div>
 
       <div className="main-content">
