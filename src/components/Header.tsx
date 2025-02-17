@@ -13,7 +13,7 @@ interface HeaderProps {
 export const Header: React.FC<HeaderProps> = ({ givenName }) => (
     <div className="header">
       <div className="header-content">
-        <div className="header-left">
+        <div className="header-center">
           <BalanceScale />
           <div className="header-title-container">
             <h1>Legal Document Analysis</h1>

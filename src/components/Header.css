@@ -12,10 +12,11 @@
   margin: 0 auto;
 }
 
-.header-left {
+.header-center {
   display: flex;
   align-items: center;
   gap: 16px;
+  margin: 0 auto;
 }
 
 .header-title-container {

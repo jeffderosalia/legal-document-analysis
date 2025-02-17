@@ -3,6 +3,7 @@ import "./DocumentChat.css";
 import { ChevronRight, File, Folder, MessagesSquare, SquarePen, PanelLeft} from 'lucide-react';
 import { ChatDisplay } from '../components/ChatDisplay';
 import { ChatInput } from '../components/ChatInput';
+import { DropdownSelector } from '../components/DropdownSelector';
 import {CreateCollectionModal} from '../components/CreateCollectionModal'
 import {FileUpload} from '../components/FileUpload'
 import {GearMenu } from '../components/GearMenu'
@@ -10,21 +11,12 @@ import { createPrompt, getAllDocuments, uploadFile, getUser } from '../lib/osdk'
 import { createCollection, getFileCollection, deleteCollection } from '../lib/osdkCollections';
 import { addToChat, getChatLog } from '../lib/osdkChatLog';
 import { chat } from '../lib/llmclient';
-import { Document, Message, Provider, MessageGroup } from '../types';
+import { Document, Message, MessageGroup, UIProvider } from '../types';
 import { Osdk  } from "@osdk/client";
 import { FileCollection, createChatLog } from "@legal-document-analysis/sdk";
 import {Header} from '../components/Header';
 import { Serialized } from '@langchain/core/load/serializable';
 import { ToolMessage } from '@langchain/core/messages';
-
-type UIProvider = {
-  id: 'chatgpt' | 'anthropic' | 'anthropic_with_example';
-  provider: Provider;
-  model: string;
-  name: string;
-  enabled: boolean;
-  apiKey: string;
-}
 
 const DocumentChat: React.FC = () => {
   const [user, setUser] = useState<any>();
@@ -359,30 +351,12 @@ const DocumentChat: React.FC = () => {
   return (
     <div className="app-container">
       <div className={sidebarOpen ? 'sidebar open' : 'sidebar collapsed'}>
-        <div className="nav-buttons">
-          <button title={sidebarOpen ? 'Collapse Sidebar' : 'Expand Sidebar'} className="toggle-sidebar button p5" onClick={()=> {setSidebarOpen(!sidebarOpen)}}><PanelLeft stroke='#666'  /></button>
-          <button title="Start New Chat" className={sidebarOpen ? 'd-none' : ''} onClick={handleNewChat}><SquarePen stroke='#666'  /></button>
+        <div id="nav-buttons">
+          <button title={sidebarOpen ? 'Collapse Sidebar' : 'Expand Sidebar'} className="toggle-sidebar button p7" onClick={()=> {setSidebarOpen(!sidebarOpen)}}><PanelLeft stroke='#666'  /></button>
+          <button title="Start New Chat" className={sidebarOpen ? 'd-none p7 ' : 'p7'} onClick={handleNewChat}><SquarePen stroke='#666'  /></button>
+          <DropdownSelector setProviders={setProviders} providers={providers} />
         </div>  
         <div className="inner">
-
-          <CreateCollectionModal
-            isOpen={isModalOpen}
-            onClose={() => setIsModalOpen(false)}
-            documents={selectedDocs}
-            onCreateCollection={handleCreateCollection}
-          />
-          <section className="collections-container">
-          <h5>Document Sets</h5>
-          <div className="sidebar-header">
-            <GearMenu actions={actions} />
-
-            <div style={{display: 'none'}}>
-            <FileUpload onFileSelect={handleFileUpload} />
-            </div>
-          </div>
-
-          {documents && documents.children?.map(item => renderItem(item))}
-          </section>
           <section className="recent-chats">
             <h5>Recent</h5>
             <div className="sidebar-header">
@@ -394,23 +368,26 @@ const DocumentChat: React.FC = () => {
               ))}
             </ul>
           </section>
-          <section className="provider-options">
-            <h5>Select your Providers</h5>
-            {providers.map(provider => (
-              <label key={provider.id}>
-                <input 
-                  type="checkbox"
-                  checked={provider.enabled}
-                  onChange={() => setProviders(prev => 
-                    prev.map(p => p.id === provider.id ? {...p, enabled: !p.enabled} : p)
-                  )}
-                />
-                {provider.name}
-              </label>
-            ))}
-            </section>
-          </div>
 
+          <CreateCollectionModal
+            isOpen={isModalOpen}
+            onClose={() => setIsModalOpen(false)}
+            documents={selectedDocs}
+            onCreateCollection={handleCreateCollection}
+          />
+          <section className="collections-container">
+            <h5>Document Sets</h5>
+            <div className="sidebar-header">
+              <GearMenu actions={actions} />
+
+              <div style={{display: 'none'}}>
+              <FileUpload onFileSelect={handleFileUpload} />
+              </div>
+            </div>
+
+            {documents && documents.children?.map(item => renderItem(item))}
+          </section>
+        </div>
       </div>
 
       <div className="main-content">

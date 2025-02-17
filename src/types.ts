@@ -56,3 +56,12 @@ export interface ChatOptions {
   onToolStart?: ToolCallbackStart;
   onToolEnd?: ToolCallbackEnd
 }
+
+export type UIProvider = {
+  id: 'chatgpt' | 'anthropic' | 'anthropic_with_example';
+  provider: Provider;
+  model: string;
+  name: string;
+  enabled: boolean;
+  apiKey: string;
+}

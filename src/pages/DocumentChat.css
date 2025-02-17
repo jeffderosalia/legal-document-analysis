@@ -17,11 +17,6 @@ h1, h2, h3, h4, h5, h6 {
   margin:0;
   padding: 0;
 }
-.app-container button {
-  margin:0;
-  padding: 0;
-  background: transparent;
-}
 
 
 input[type="checkbox"] {
@@ -59,7 +54,7 @@ input[type="checkbox"]:checked::after {
   background: #f3f4f6; /* Light gray */
   color: #333;
   border-right: 1px solid #ddd;
-  padding: 35px 16px 16px 16px;
+  padding: 50px 16px 16px 16px;
   overflow-y: auto;
   display: flex;
   flex-direction: column;
@@ -73,12 +68,12 @@ input[type="checkbox"]:checked::after {
   padding: 0;
 }
 .sidebar .inner {
-  height: calc(100vh - 100px);
+  height: calc(100vh - 150px);
 }
 .sidebar.collapsed .inner{
   visibility: hidden;;
 }
-.nav-buttons {
+#nav-buttons {
   position: absolute;
   top: 5px;
   left: 15px;
@@ -91,8 +86,11 @@ input[type="checkbox"]:checked::after {
   padding-bottom: 10px;
 }
 .sidebar section {
-  height: 40%;
+  height: 50%;
   overflow-y: auto;
+}
+.collections-container {
+  padding-top: 10px;
 }
 .sidebar section:nth-child(3) {
   height: 120px;
@@ -108,6 +106,9 @@ input[type="checkbox"]:checked::after {
 }
 .p5 {
   padding-right: 5px;
+}
+.p7 {
+  padding: 7px;
 }
 
 .chevron.expanded {
@@ -158,6 +159,8 @@ input[type="checkbox"]:checked::after {
 .sidebar .recent-chats li a{
   cursor: pointer;
   color: #333;
+  padding: 10px 0;
+  display: block;
 }    
 
 .sidebar .recent-chats li a:hover{
@@ -209,13 +212,12 @@ input[type="checkbox"]:checked::after {
 
 
 .messages-container {
-  background-color: #f9fafb; /* Soft light background */
-  width: 100%;
+  background-color: #FFF;
   height: 100%;
   display: flex;
   flex-direction: column;
   justify-content: flex-start;
-  padding: 20px 5px;
+  padding: 20px 50px;
   gap: 20px;
   overflow-y: auto;
   flex: 1;
