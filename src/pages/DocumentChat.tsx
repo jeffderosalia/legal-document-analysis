@@ -181,7 +181,7 @@ const DocumentChat: React.FC = () => {
     );
   };
 
-  const sendChatCB = useCallback(async (question: Message[]) => {
+  const sendChatCB = useCallback(async (question: Message[], mediaItems: string[]) => {
     console.log("sendChatCB messages at start:", messages);
     setLoadingLLM(false);
     const enabledProviders = providers.filter(p => p.enabled);
@@ -206,7 +206,7 @@ const DocumentChat: React.FC = () => {
         }
       }
 
-      await chat(p.provider, p.model, allMessages, p.apiKey, {
+      await chat(p.provider, p.model, allMessages, mediaItems, p.apiKey, {
         streaming: true,
         onToken: writeToChat,
         onComplete: saveMessage,
@@ -289,8 +289,12 @@ const DocumentChat: React.FC = () => {
         currentGroup.answers.push(message);
       }
     }
-    setMessages(groups);
-    setQuestionCount(groups.length+1);
+
+    // Remove groups with no answer
+    const cleanedGroups = groups.filter((group) => group.answers.length > 0)
+
+    setMessages(cleanedGroups);
+    setQuestionCount(cleanedGroups.length+1);
   };
 
   const handleSendMessage = (message: string): void => {
