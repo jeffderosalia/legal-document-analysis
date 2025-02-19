@@ -4,11 +4,13 @@ import { ChevronRight, File, Folder, MessagesSquare, SquarePen, PanelLeft} from 
 import { ChatDisplay } from '../components/ChatDisplay';
 import { ChatInput } from '../components/ChatInput';
 import { DropdownSelector } from '../components/DropdownSelector';
+import { CollapsibleSection } from '../components/CollapsibleSection';
 import {CreateCollectionModal} from '../components/CreateCollectionModal'
 import {FileUpload} from '../components/FileUpload'
 import {GearMenu } from '../components/GearMenu'
-import { createPrompt, getAllDocuments, uploadFile, getUser } from '../lib/osdk';
+import { createPrompt, getAllDocuments, getUser } from '../lib/osdk';
 import { createCollection, getFileCollection, deleteCollection } from '../lib/osdkCollections';
+import {uploadMedia} from '../lib/osdkMedia';
 import { addToChat, getChatLog } from '../lib/osdkChatLog';
 import { chat } from '../lib/llmclient';
 import { Document, Message, MessageGroup, UIProvider } from '../types';
@@ -20,6 +22,7 @@ import { ToolMessage } from '@langchain/core/messages';
 
 const DocumentChat: React.FC = () => {
   const [user, setUser] = useState<any>();
+  const [selectAll, setSelectAll] = useState<boolean>(false);
   const [sidebarOpen, setSidebarOpen] = useState<boolean>(true);
   const [collections, setCollections] = useState<Osdk.Instance<FileCollection>[]>([]);
   const [documents, setDocuments] = useState<Document>();
@@ -64,24 +67,20 @@ const DocumentChat: React.FC = () => {
       acc[obj.collectionName||''].push(obj.fileRid||'');
       return acc;
     }, {} as Record<string, string[]>);
-    
+    console.log(firstTime);
     const distinctCollections = [...new Set(colls.map(obj => obj.collectionName))]
       .map(coll => ({
         id: coll,
         name: coll,
         type: 'folder'
       } as Document));
-
-    if (firstTime) {
-      const allitems = [...distinctCollections, ...docs.children || []]
-      setSelectedDocs(allitems);
-    }
   
     distinctCollections.forEach(coll=> {
       const matching = docs.children?.filter(m=> collIds[coll.name].includes(m.id))
         docs.children = docs.children?.filter(m=> !collIds[coll.name].includes(m.id))
       coll.children = matching;
     });
+    distinctCollections.sort((a: Document, b: Document) => a.name.localeCompare(b.name));
     if (distinctCollections.length>0) {
       docs.children = [
         ...distinctCollections,
@@ -223,6 +222,26 @@ const DocumentChat: React.FC = () => {
     }));
   }, [providers, messages]);;
 
+  const handleSelectAll = () => {
+    function flattenDocuments(documents: Document[]): Document[] {
+      return documents.reduce((acc: Document[], doc) => {
+        acc.push(doc);
+        if (doc.children) {
+          acc.push(...flattenDocuments(doc.children));
+        }
+        return acc;
+      }, []);
+    }
+    if (selectAll) {
+      setSelectedDocs([]);
+    } else {
+
+      if (documents != null && documents.children != null)
+        setSelectedDocs(flattenDocuments(documents?.children))
+    }
+    setSelectAll(!selectAll);
+  };
+
   const handleCreateCollection =  (collectioninfo: any) => {
     console.log(collectioninfo);
     const create = async () => {
@@ -237,20 +256,7 @@ const DocumentChat: React.FC = () => {
     create();
   };
   const handleFileUpload = async (file: File) => {
-    const base64 = await file.text();
-    console.log(base64);
-    const fileUploadResult = await uploadFile(file.name, base64);
-    console.log(fileUploadResult);
-  /*
-    const reader = new FileReader();
-    reader.onload = async (e) => {
-      const base64 = e.target?.result as string;
-      const fileUploadResult = await uploadFile(file.name, base64);
-      console.log(fileUploadResult);
-      };
-    reader.readAsDataURL(file);
-    */
-
+    await uploadMedia(file)
   };
   const handleNewChat = () => {
     setMessages([]);
@@ -353,21 +359,17 @@ const DocumentChat: React.FC = () => {
       <div className={sidebarOpen ? 'sidebar open' : 'sidebar collapsed'}>
         <div id="nav-buttons">
           <button title={sidebarOpen ? 'Collapse Sidebar' : 'Expand Sidebar'} className="toggle-sidebar button p7" onClick={()=> {setSidebarOpen(!sidebarOpen)}}><PanelLeft stroke='#666'  /></button>
-          <button title="Start New Chat" className={sidebarOpen ? 'd-none p7 ' : 'p7'} onClick={handleNewChat}><SquarePen stroke='#666'  /></button>
+          <button title="Start New Chat" style={{'paddingRight': '40px'}} className={'p7'} onClick={handleNewChat}><SquarePen stroke='#666'  /></button>
           <DropdownSelector setProviders={setProviders} providers={providers} />
         </div>  
         <div className="inner">
-          <section className="recent-chats">
-            <h5>Recent</h5>
-            <div className="sidebar-header">
-              <button onClick={handleNewChat}><SquarePen stroke='#666'  /></button>
-            </div>
-            <ul>
-              {recentChats && [...recentChats].reverse().map(c => (
-                <li key={c[0].threadId}><a onClick={() => handleGetChat(c)}><MessagesSquare width="16px" height="16px" /> {c[0].message}</a></li>
-              ))}
-            </ul>
-          </section>
+          <CollapsibleSection title="Recent Chats" defaultOpen={true} className="recent-chats">
+              <ul>
+                {recentChats && [...recentChats].reverse().map(c => (
+                  <li key={c[0].threadId}><a onClick={() => handleGetChat(c)}><MessagesSquare width="16px" height="16px" /> {c[0].message}</a></li>
+                ))}
+              </ul>
+          </CollapsibleSection>
 
           <CreateCollectionModal
             isOpen={isModalOpen}
@@ -375,18 +377,30 @@ const DocumentChat: React.FC = () => {
             documents={selectedDocs}
             onCreateCollection={handleCreateCollection}
           />
-          <section className="collections-container">
-            <h5>Document Sets</h5>
+          <CollapsibleSection title="DocumentSets" defaultOpen={false} className="collections-container">
+
+          <>
+          <label className="checkbox-wrapper">
+                <input
+                  type="checkbox"
+                  checked={selectAll}
+                  onChange={handleSelectAll}
+                />
+                &nbsp;&nbsp;Select All
+            </label>
+
             <div className="sidebar-header">
               <GearMenu actions={actions} />
 
-              <div style={{display: 'none'}}>
+              <div style={{'display': 'none'}}>
               <FileUpload onFileSelect={handleFileUpload} />
               </div>
             </div>
 
             {documents && documents.children?.map(item => renderItem(item))}
-          </section>
+          </>
+          </CollapsibleSection>
+
         </div>
       </div>
 

@@ -69,6 +69,8 @@ input[type="checkbox"]:checked::after {
 }
 .sidebar .inner {
   height: calc(100vh - 150px);
+  border-top: 1px solid #ddd;
+
 }
 .sidebar.collapsed .inner{
   visibility: hidden;;
@@ -86,11 +88,8 @@ input[type="checkbox"]:checked::after {
   padding-bottom: 10px;
 }
 .sidebar section {
-  height: 50%;
   overflow-y: auto;
-}
-.collections-container {
-  padding-top: 10px;
+  border-bottom: 1px solid #ddd;
 }
 .sidebar section:nth-child(3) {
   height: 120px;
@@ -134,12 +133,8 @@ input[type="checkbox"]:checked::after {
   padding-right: 5px;
 }
 .sidebar .recent-chats {
-  margin-top: 20px;
-  padding: 1rem 0;
-  border-top: 1px solid #ddd;
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
   text-align: left;
   list-style: none;
 }
@@ -182,6 +177,7 @@ input[type="checkbox"]:checked::after {
   display: flex;
   flex-direction: column;
   height: 100vh;
+  width: calc(100% - 290px);
 }
 
 .header {
@@ -300,4 +296,5 @@ input[type="checkbox"]:checked::after {
 .icon {
   height: 16px;
   width: 16px;
+  flex-shrink: 0;
 }

@@ -1,0 +1,35 @@
+.collapsible-section {
+    width: 100%;
+  }
+  
+  .collapsible-button {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 8px;
+    text-align: left;
+    font-size: 14px;
+  }
+  
+  .collapsible-button:hover {
+    background-color: rgba(0, 0, 0, 0.05);
+  }
+  
+  .collapsible-icon {
+    width: 16px;
+    height: 16px;
+    stroke: #333;
+  }
+  
+  .collapsible-title {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 1.1rem;
+    color: #333;
+  }
+  
+  .collapsible-content {
+    padding-left: 8px;
+  }
