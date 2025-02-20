@@ -63,11 +63,12 @@ async function generateSection(section: Section, mediaItems: string[], config?: 
                     ${section.section_formatting}
 
                     Make sure to format your answer with markdown, 
-                    and make sure the to have the section name (${section.section_name})
+                    and make sure to always lead with the section name (${section.section_name})
                     as the heading. Always end with two line breaks.
                     Do not offer any editorial opinion or analysis, and do not include any sort of
                     post-script or conclusion paragraph. Only summarize and collate what is found in the
-                    document excerpts.`
+                    document excerpts. Do not treat any statements in the deposition as factual, and do not imply
+                    that they are true. Only state what was said and claimed by the deposed.`
 
     const constructedPromptMessages = await client(constructPromptMaybeWithSelectedDocuments).executeFunction({
         "question": prompt,
@@ -118,7 +119,7 @@ async function generateDepoSummary(depositionSubject: string, mediaItems: string
             example
     }
     
-    const get_outline_prompt = `Create an outline of a deposition summary for the deposition of ${depositionSubject}, based on the example deposition summary provided. Give a list of sections, a short description of the type of content to be included in each section sufficient as instruction to fill it with more detail later, and a description of the structure and format of each section (tables, bullet points, etc). Don't include the following sections: "Impression of Witness" and "Medical History". Respond with valid JSON formatted as follows:\n\n[{{\"section_name\": SECTION_NAME, \"section_description\": SECTION_DESCRIPTION \"section_formatting\": SECTION_FORMATTING}}...]`
+    const get_outline_prompt = `Create an outline of a deposition summary for the deposition of ${depositionSubject}, based on the example deposition summary provided. Give a list of sections, a short description of the type of content to be included in each section sufficient as instruction to fill it with more detail later, and a description of the structure and format of each section (tables, bullet points, etc). Don't include an "Impression of Witness" section. Respond with valid JSON formatted as follows:\n\n[{{\"section_name\": SECTION_NAME, \"section_description\": SECTION_DESCRIPTION \"section_formatting\": SECTION_FORMATTING}}...]`
 
     const prompt_template = ChatPromptTemplate.fromMessages([
         ["user", exampleText],

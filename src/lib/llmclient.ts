@@ -115,6 +115,7 @@ export async function chat(
         streaming,
         temperature,
         anthropicApiKey: apiKey,
+        maxTokens: 8192
       });
 
   // Setup streaming handler if needed
@@ -122,8 +123,10 @@ export async function chat(
     ? [new StreamingHandler(onToken, onComplete, onToolStart, onToolEnd)]
     : undefined;
 
+  const isNotFirstMessage = !messages.some(msg => msg.content.includes("Here is the history of your conversation up until now"))
+
   try {
-    if (provider === "anthropic_with_example"){
+    if (provider === "anthropic_with_example" && isNotFirstMessage){
       const response = await invokeWithExample(model_instance, langchainMessages, mediaItems, { callbacks });
       console.log("Complete doc:")
       console.log(response)
