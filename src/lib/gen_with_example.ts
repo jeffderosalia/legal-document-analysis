@@ -45,7 +45,7 @@ async function generateSection(section: Section, mediaItems: string[], config?: 
 
     console.log(`Generating section: ${section.section_name}`)
 
-    const openai_model = new ChatOpenAI({
+    const section_model = new ChatOpenAI({
         modelName: "gpt-4o-mini",
         streaming: true,
         openAIApiKey: process.env.VITE_OPENAI_API_KEY,
@@ -61,6 +61,11 @@ async function generateSection(section: Section, mediaItems: string[], config?: 
                     The format should be:
 
                     ${section.section_formatting}
+
+                    Make sure your summary contains all the details that a client or a new team member
+                    on the defense team would use to understand the full case.
+
+                    Write the summary at a PhD level.
 
                     Make sure to format your answer with markdown, 
                     and make sure to always lead with two newlines
@@ -101,7 +106,7 @@ async function generateSection(section: Section, mediaItems: string[], config?: 
         }
     })
 
-    return await openai_model.invoke(langchainMessages, config)
+    return await section_model.invoke(langchainMessages, config)
 }
 
 
