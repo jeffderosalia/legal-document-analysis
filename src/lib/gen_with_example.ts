@@ -15,8 +15,7 @@ import { tool } from "@langchain/core/tools"
 
 
 const getExampleDocText = async () : Promise<string | undefined> => {
-    const result = await client(ExtractedExampleText)
-        .fetchPage()
+    const result = await client(ExtractedExampleText).where({mediaItemRid: {$eq: "ri.mio.main.media-item.0195244c-7091-7fd9-8893-4d020e600bb5" }}).fetchPage()
     const doc = result.data.pop()
     return doc?.rawText
 }
@@ -37,9 +36,8 @@ type Section = {
 
 const Outline = z.object({sections: z.array(Section).describe("List of sections")})
 
-
-const memoSchema = z.object({
-    trial: z.string().describe("The trial that the memo is regarding")
+const depositionSchema = z.object({
+    depositionSubject: z.string().describe("The person being deposed")
   });
 
 
@@ -53,7 +51,7 @@ async function generateSection(section: Section, mediaItems: string[], config?: 
         openAIApiKey: process.env.VITE_OPENAI_API_KEY,
     })
 
-    const prompt = `Write the following section of a memo: ${section.section_name}.
+    const prompt = `Write the following section of a deposition summary: ${section.section_name}.
                     Use only the information in the document excerpts provided.
                     Make sure to be comprehensive and complete.
                     Here's a description of the section contents:
@@ -66,13 +64,16 @@ async function generateSection(section: Section, mediaItems: string[], config?: 
 
                     Make sure to format your answer with markdown, 
                     and make sure the to have the section name (${section.section_name})
-                    as the heading. Always end with two line breaks.`
+                    as the heading. Always end with two line breaks.
+                    Do not offer any editorial opinion or analysis, and do not include any sort of
+                    post-script or conclusion paragraph. Only summarize and collate what is found in the
+                    document excerpts.`
 
     const constructedPromptMessages = await client(constructPromptMaybeWithSelectedDocuments).executeFunction({
         "question": prompt,
         "history_string": '',
         "media_items": mediaItems,
-        "k": 100 // Max number of document chunks to retrieve
+        "k": 150 // Max number of document chunks to retrieve
     })
 
     var langchainMessages: BaseMessage[] = constructedPromptMessages.map(msg => {
@@ -92,9 +93,9 @@ async function generateSection(section: Section, mediaItems: string[], config?: 
 }
 
 
-async function generateMemo(trial: string, mediaItems: string[], config?: RunnableConfig){
+async function generateDepoSummary(depositionSubject: string, mediaItems: string[], config?: RunnableConfig){
 
-    console.log(`Generating memo for ${trial}`)
+    console.log(`Generating deposition summary for ${depositionSubject}`)
 
     const model = new ChatAnthropic({
         modelName: "claude-3-5-sonnet-20241022",
@@ -117,7 +118,7 @@ async function generateMemo(trial: string, mediaItems: string[], config?: Runnab
             example
     }
     
-    const get_outline_prompt = `Create an outline of a case memorandum for the ${trial} trial, based on the example memorandum provided. Give a list of sections, a short description of the type of content to be included in each section sufficient as instruction to fill it with more detail later, and a description of the structure and format of each section (tables, bullet points, etc). Respond with valid JSON formatted as follows:\n\n[{{\"section_name\": SECTION_NAME, \"section_description\": SECTION_DESCRIPTION \"section_formatting\": SECTION_FORMATTING}}...]`
+    const get_outline_prompt = `Create an outline of a deposition summary for the deposition of ${depositionSubject}, based on the example deposition summary provided. Give a list of sections, a short description of the type of content to be included in each section sufficient as instruction to fill it with more detail later, and a description of the structure and format of each section (tables, bullet points, etc). Don't include the following sections: "Impression of Witness" and "Medical History". Respond with valid JSON formatted as follows:\n\n[{{\"section_name\": SECTION_NAME, \"section_description\": SECTION_DESCRIPTION \"section_formatting\": SECTION_FORMATTING}}...]`
 
     const prompt_template = ChatPromptTemplate.fromMessages([
         ["user", exampleText],
@@ -128,7 +129,7 @@ async function generateMemo(trial: string, mediaItems: string[], config?: Runnab
     console.log(prompt_template)
 
     const get_outline_chain = prompt_template.pipe(structured_model)
-    const outline = await get_outline_chain.invoke({trial})
+    const outline = await get_outline_chain.invoke({depositionSubject})
 
     console.log("Outline:")
     console.log(outline)
@@ -148,6 +149,38 @@ async function generateMemo(trial: string, mediaItems: string[], config?: Runnab
 }
 
 
+// async function invokeWithExample(
+//     model_instance: ChatOpenAI<ChatOpenAICallOptions> | ChatAnthropic,
+//     messages: BaseLanguageModelInput,
+//     mediaItems: string[],
+//     options: ChatOpenAICallOptions & ChatAnthropicCallOptions
+//   ) {
+
+//     const memoCreator = tool(
+//         async ({trial}, config?: RunnableConfig) : Promise<void> => {
+//             await generateMemo(trial, mediaItems, config)
+//         },
+//         {
+//             name: "memoCreator",
+//             description: "Use this if asked to generate a memo about a trial",
+//             schema: memoSchema,
+//         }
+//     )
+
+//     const model_with_tools = model_instance.bindTools([memoCreator])
+
+//     const tool_call = await model_with_tools.invoke(messages)
+//     options.tags = ["startingMemoGen"]
+
+//     if (tool_call.tool_calls !== undefined && tool_call.tool_calls.length > 0) {
+//         memoCreator.stream(tool_call.tool_calls[0], options)
+//         return undefined
+//     }
+
+//     return tool_call
+// }
+
+
 async function invokeWithExample(
     model_instance: ChatOpenAI<ChatOpenAICallOptions> | ChatAnthropic,
     messages: BaseLanguageModelInput,
@@ -155,28 +188,29 @@ async function invokeWithExample(
     options: ChatOpenAICallOptions & ChatAnthropicCallOptions
   ) {
 
-    const memoCreator = tool(
-        async ({trial}, config?: RunnableConfig) : Promise<void> => {
-            await generateMemo(trial, mediaItems, config)
+    const depositionSummaryCreator = tool(
+        async ({depositionSubject}, config?: RunnableConfig) : Promise<void> => {
+            await generateDepoSummary(depositionSubject, mediaItems, config)
         },
         {
-            name: "memoCreator",
-            description: "Use this if asked to generate a memo about a trial",
-            schema: memoSchema,
+            name: "depositionSummaryCreator",
+            description: "Use this if asked to write a deposition summary",
+            schema: depositionSchema,
         }
     )
 
-    const model_with_tools = model_instance.bindTools([memoCreator])
+    const model_with_tools = model_instance.bindTools([depositionSummaryCreator])
 
     const tool_call = await model_with_tools.invoke(messages)
     options.tags = ["startingMemoGen"]
 
     if (tool_call.tool_calls !== undefined && tool_call.tool_calls.length > 0) {
-        memoCreator.stream(tool_call.tool_calls[0], options)
+        depositionSummaryCreator.stream(tool_call.tool_calls[0], options)
         return undefined
     }
 
     return tool_call
 }
+
 
 export {invokeWithExample, toolStartMessages}
