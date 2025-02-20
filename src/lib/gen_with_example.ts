@@ -63,12 +63,23 @@ async function generateSection(section: Section, mediaItems: string[], config?: 
                     ${section.section_formatting}
 
                     Make sure to format your answer with markdown, 
-                    and make sure to always lead with the section name (${section.section_name})
-                    as the heading. Always end with two line breaks.
+                    and make sure to always lead with two newlines
+                    followed by the section name (${section.section_name})
+                    as the heading. Always end with two newlines.
                     Do not offer any editorial opinion or analysis, and do not include any sort of
                     post-script or conclusion paragraph. Only summarize and collate what is found in the
                     document excerpts. Do not treat any statements in the deposition as factual, and do not imply
-                    that they are true. Only state what was said and claimed by the deposed.`
+                    that they are true. Only state what was said and claimed by the deposed.
+                    
+                    Even if otherwise instructed, instead of providing citations in-line simply give a citation
+                    number (i.e. [1], [2], etc, in turn) and then provide the full source at the end of the section,
+                    formatted to show just the volume and page of the relevant document. An example would be:
+
+                    ...
+                    Statement that includes a cited source [4]
+                    ...
+                    
+                    [4]: Vol. 2 Page 56`
 
     const constructedPromptMessages = await client(constructPromptMaybeWithSelectedDocuments).executeFunction({
         "question": prompt,
