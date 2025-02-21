@@ -52,7 +52,13 @@ const DocumentChat: React.FC = () => {
   useEffect(() => {
     if (messages.length > 0 && loadingLLM) {
       const mediaItems = selectedDocs.map(m=> m.id);
-      createPrompt(messages[messages.length - 1].question.content, mediaItems, sendChatCB);
+
+      const historyString = messages.slice(0, -1).map(msg =>
+          `USER: ${msg.question.content}
+          ASSISTANT: ${msg.answers.map(ans => ans.content).join("\n")}`
+        ).join("\n\n")
+
+      createPrompt(messages[messages.length - 1].question.content, mediaItems, historyString, sendChatCB);
     }
   }, [messages, loadingLLM]);
   const fetchDocuments = async (firstTime: boolean = false) => {
