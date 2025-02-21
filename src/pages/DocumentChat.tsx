@@ -49,6 +49,7 @@ const DocumentChat: React.FC = () => {
       onClick: () => console.log('delete') 
     }
   ];
+  
   useEffect(() => {
     if (messages.length > 0 && loadingLLM) {
       const mediaItems = selectedDocs.map(m=> m.id);
