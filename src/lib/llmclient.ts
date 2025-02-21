@@ -129,6 +129,8 @@ export async function chat(
       console.log(response)
       return response?.content;
     } else {
+      console.log('allMessages', langchainMessages)
+
       const response = await basic_invoke(model_instance, langchainMessages, { callbacks });
       return response.content;
     }

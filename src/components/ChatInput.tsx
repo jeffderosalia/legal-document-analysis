@@ -4,9 +4,10 @@ import { Send } from 'lucide-react';
 
 interface ChatInputProps {
   onSendMessage: (message: string) => void;
+  isDisabled: boolean;
 }
 
-export const ChatInput: React.FC<ChatInputProps> = ({ onSendMessage }) => {
+export const ChatInput: React.FC<ChatInputProps> = ({ onSendMessage, isDisabled}) => {
   const [inputValue, setInputValue] = useState('');
 
   const handleSend = () => {
@@ -26,7 +27,8 @@ export const ChatInput: React.FC<ChatInputProps> = ({ onSendMessage }) => {
         rows={3}
         //onKeyDown={(e) => e.key === 'Enter' && handleSend()}
       />
-      <button id="send-button" onClick={handleSend}>
+      <button id="send-button" title={isDisabled ? 'Select documents to enable chat' : ''}
+         className={isDisabled ? 'disabled' : ''} disabled={isDisabled} onClick={handleSend}>
         <Send className="send-icon" />
       </button>
       </div>

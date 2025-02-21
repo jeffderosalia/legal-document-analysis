@@ -55,17 +55,20 @@
   white-space: nowrap;
 }
 
-.send-button:hover {
+#send-button:hover {
   background-color: #0e8b6d;
 }
 
-.send-button:active {
+#send-button:active {
   background-color: #0c725a;
 }
 
-.send-button :global(.send-icon) {
+#send-button :global(.send-icon) {
   width: 16px;
   height: 16px;
+}
+#send-button.disabled {
+  opacity: .5;
 }
 
 /* Light scrollbar styles */

@@ -4,8 +4,8 @@ import { ChevronRight, File, Folder, MessagesSquare, SquarePen, PanelLeft} from 
 import { ChatDisplay } from '../components/ChatDisplay';
 import { ChatInput } from '../components/ChatInput';
 import { DropdownSelector } from '../components/DropdownSelector';
-import { CollapsibleSection } from '../components/CollapsibleSection';
 import {CreateCollectionModal} from '../components/CreateCollectionModal'
+import { CollapsibleSection, CollapsibleGroup } from '../components/Collapsible';
 import {FileUpload} from '../components/FileUpload'
 import {GearMenu } from '../components/GearMenu'
 import { createPrompt, getAllDocuments, getUser } from '../lib/osdk';
@@ -363,43 +363,46 @@ const DocumentChat: React.FC = () => {
           <DropdownSelector setProviders={setProviders} providers={providers} />
         </div>  
         <div className="inner">
-          <CollapsibleSection title="Recent Chats" defaultOpen={true} className="recent-chats">
-              <ul>
-                {recentChats && [...recentChats].reverse().map(c => (
-                  <li key={c[0].threadId}><a onClick={() => handleGetChat(c)}><MessagesSquare width="16px" height="16px" /> {c[0].message}</a></li>
-                ))}
-              </ul>
-          </CollapsibleSection>
-
           <CreateCollectionModal
-            isOpen={isModalOpen}
-            onClose={() => setIsModalOpen(false)}
-            documents={selectedDocs}
-            onCreateCollection={handleCreateCollection}
-          />
-          <CollapsibleSection title="DocumentSets" defaultOpen={false} className="collections-container">
+              isOpen={isModalOpen}
+              onClose={() => setIsModalOpen(false)}
+              documents={selectedDocs}
+              onCreateCollection={handleCreateCollection}
+            />
+          <CollapsibleGroup defaultOpen='docs'>
+            <CollapsibleSection id="chats" title="Recent Chats" className="recent-chats">
+                <ul>
+                  {recentChats && [...recentChats].reverse().map(c => (
+                    <li key={c[0].threadId}><a onClick={() => handleGetChat(c)}><MessagesSquare width="16px" height="16px" /> {c[0].message}</a></li>
+                  ))}
+                </ul>
+            </CollapsibleSection>
 
-          <>
-          <label className="checkbox-wrapper">
-                <input
-                  type="checkbox"
-                  checked={selectAll}
-                  onChange={handleSelectAll}
-                />
-                &nbsp;&nbsp;Select All
-            </label>
+            <CollapsibleSection id="docs" title="DocumentSets" className="collections-container">
 
-            <div className="sidebar-header">
-              <GearMenu actions={actions} />
+              <>
+                <label className="checkbox-wrapper">
+                    <input
+                      type="checkbox"
+                      checked={selectAll}
+                      onChange={handleSelectAll}
+                    />
+                    &nbsp;&nbsp;Select All
+                </label>
 
-              <div style={{'display': 'none'}}>
-              <FileUpload onFileSelect={handleFileUpload} />
-              </div>
-            </div>
+                <div className="sidebar-header">
+                  <GearMenu actions={actions} />
 
-            {documents && documents.children?.map(item => renderItem(item))}
-          </>
-          </CollapsibleSection>
+                  <div style={{'display': 'none'}}>
+                  <FileUpload onFileSelect={handleFileUpload} />
+                  </div>
+                </div>
+
+                {documents && documents.children?.map(item => renderItem(item))}
+              </>
+            </CollapsibleSection>
+          </CollapsibleGroup>
+
 
         </div>
       </div>
@@ -409,7 +412,7 @@ const DocumentChat: React.FC = () => {
         <Header givenName={user.givenName} />
         )}
         <ChatDisplay messages={messages} />
-        <ChatInput onSendMessage={handleSendMessage} />
+        <ChatInput isDisabled={selectedDocs.length === 0} onSendMessage={handleSendMessage} />
       </div>
     </div>
   );
