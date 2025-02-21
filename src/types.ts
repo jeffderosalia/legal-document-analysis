@@ -15,6 +15,7 @@ export type Provider = "openai" | "anthropic" | "anthropic_with_example";
 
 export type StreamingCallback = (token: string) => void;
 export type StreamingCallbackEnd = () => void;
+export type StreamingError = (error: Error) => void;
 
 export type ToolCallbackStart = (
   tool: Serialized,
@@ -53,6 +54,7 @@ export interface ChatOptions {
   temperature?: number;
   onToken?: StreamingCallback;
   onComplete?: StreamingCallbackEnd;
+  onError?: StreamingError;
   onToolStart?: ToolCallbackStart;
   onToolEnd?: ToolCallbackEnd
 }

@@ -34,7 +34,7 @@ const DocumentChat: React.FC = () => {
   const [messages, setMessages] = useState<MessageGroup[]>([]);
   const [questionCount, setQuestionCount] = useState<number>(0);
   const [providers, setProviders] = useState<UIProvider[]>([
-    { id: 'chatgpt', provider: 'openai', model: 'gpt-4o-mini', name: 'ChatGPT', enabled: true, apiKey: process.env.VITE_OPENAI_API_KEY || "x" },
+    { id: 'chatgpt', provider: 'openai', model: 'gpt-4o-2024-11-20', name: 'ChatGPT', enabled: true, apiKey: process.env.VITE_OPENAI_API_KEY || "x" },
     { id: 'anthropic', provider: 'anthropic', model: 'claude-3-5-sonnet-20241022',name: 'Anthropic', enabled: false, apiKey: process.env.VITE_ANTHROPIC_API_KEY || "x" },
     { id: 'anthropic_with_example', provider: 'anthropic_with_example', model: 'claude-3-5-sonnet-20241022',name: 'Anthropic + Example Memo', enabled: false, apiKey: process.env.VITE_ANTHROPIC_API_KEY || "x" }
   ]);
@@ -202,11 +202,18 @@ const DocumentChat: React.FC = () => {
           storeChatMessage(messages[messages.length-1])
         }
       }
+      const onError = () => {
+        fullResponse += "Unexpected error at the provider. Try again later.";
+        const newMessages = [...messages];
+        newMessages[newMessages.length-1].answers[index].content = fullResponse;
+        setMessages(newMessages);
+      }
 
       await chat(p.provider, p.model, allMessages, mediaItems, p.apiKey, {
         streaming: true,
         onToken: writeToChat,
         onComplete: saveMessage,
+        onError: onError,
         onToolStart: (
           _tool: Serialized,
           _input: string,

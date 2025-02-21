@@ -9,7 +9,7 @@ import {
   ToolMessage,
 } from "@langchain/core/messages";
 import { BaseCallbackHandler } from "@langchain/core/callbacks/base";
-import { StreamingCallback, StreamingCallbackEnd, Provider, Message, ChatOptions, ToolCallbackStart, ToolCallbackEnd  } from "../types";
+import { StreamingCallback, StreamingCallbackEnd, StreamingError, Provider, Message, ChatOptions, ToolCallbackStart, ToolCallbackEnd  } from "../types";
 import { invokeWithExample } from "./gen_with_example";
 import { BaseLanguageModelInput } from "@langchain/core/language_models/base";
 import { Serialized } from "@langchain/core/load/serializable";
@@ -21,6 +21,7 @@ class StreamingHandler extends BaseCallbackHandler {
     }
     constructor(private onToken: StreamingCallback,
                 private onComplete?: StreamingCallbackEnd,
+                private onError?: StreamingError,
                 private onToolStart?: ToolCallbackStart,
                 private onToolEnd?: ToolCallbackEnd) {
       super();
@@ -31,10 +32,11 @@ class StreamingHandler extends BaseCallbackHandler {
     }
     async handleLLMStart(): Promise<void> {}
     async handleLLMEnd(): Promise<void> {
-      if (this.onComplete) {
-        this.onComplete();
-      }
-    }   async handleLLMError(): Promise<void> {}
+      if (this.onComplete) this.onComplete();
+    }   
+    async handleLLMError(error: Error): Promise<void> {
+      if (this.onError) this.onError(error);
+    }
     async handleChainStart(): Promise<void> {}
     async handleChainEnd(): Promise<void> {}
     async handleChainError(): Promise<void> {}
@@ -84,6 +86,7 @@ export async function chat(
     temperature = 1, 
     onToken,
     onComplete,
+    onError,
     onToolStart,
     onToolEnd
   } = options;
@@ -120,7 +123,7 @@ export async function chat(
 
   // Setup streaming handler if needed
   const callbacks = streaming && onToken 
-    ? [new StreamingHandler(onToken, onComplete, onToolStart, onToolEnd)]
+    ? [new StreamingHandler(onToken, onComplete, onError, onToolStart, onToolEnd)]
     : undefined;
 
   const isNotFirstMessage = !messages.some(msg => msg.content.includes("Here is the history of your conversation up until now"))
@@ -139,6 +142,6 @@ export async function chat(
     }
   } catch (error) {
     console.error(`Error with ${provider}:`, error);
-    throw error;
+    //throw error;
   }
 };
