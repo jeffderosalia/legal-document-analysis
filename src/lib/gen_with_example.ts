@@ -1,24 +1,24 @@
 import {
     constructPromptMaybeWithSelectedDocuments,
-    ExtractedExampleText,
+    getDomainSpecificPromptInstr,
+    getDomainSpecificOutlineTemplate
 } from "@legal-document-analysis/sdk";
 import { z } from "zod";
 
 import client from "./client";
 import { ChatAnthropic, ChatAnthropicCallOptions } from "@langchain/anthropic";
 import { BaseLanguageModelInput } from "@langchain/core/language_models/base";
-import { AIMessage, BaseMessage, HumanMessage, SystemMessage } from "@langchain/core/messages";
+import { AIMessage, BaseMessage, HumanMessage} from "@langchain/core/messages";
 import { ChatOpenAI, ChatOpenAICallOptions } from "@langchain/openai";
-import {ChatPromptTemplate} from "@langchain/core/prompts"
 import { RunnableConfig } from "@langchain/core/runnables";
 import { tool } from "@langchain/core/tools"
 
 
-const getExampleDocText = async () : Promise<string | undefined> => {
-    const result = await client(ExtractedExampleText).where({mediaItemRid: {$eq: "ri.mio.main.media-item.0195244c-7091-7fd9-8893-4d020e600bb5" }}).fetchPage()
-    const doc = result.data.pop()
-    return doc?.rawText
-}
+// const getExampleDocText = async () : Promise<string | undefined> => {
+//     const result = await client(ExtractedExampleText).where({mediaItemRid: {$eq: "ri.mio.main.media-item.0195244c-7091-7fd9-8893-4d020e600bb5" }}).fetchPage()
+//     const doc = result.data.pop()
+//     return doc?.rawText
+// }
 
 const toolStartMessages: Record<string, string> = {"memoCreator": "Creating memo"}
 
@@ -34,7 +34,7 @@ type Section = {
     section_formatting: string
 }
 
-const Outline = z.object({sections: z.array(Section).describe("List of sections")})
+//const Outline = z.object({sections: z.array(Section).describe("List of sections")})
 
 const depositionSchema = z.object({
     depositionSubject: z.string().describe("The person being deposed")
@@ -46,7 +46,7 @@ async function generateSection(section: Section, mediaItems: string[], config?: 
     console.log(`Generating section: ${section.section_name}`)
 
     const section_model = new ChatOpenAI({
-        modelName: "gpt-4o-mini",
+        modelName: "gpt-4o",
         streaming: true,
         openAIApiKey: process.env.VITE_OPENAI_API_KEY,
     })
@@ -68,7 +68,7 @@ async function generateSection(section: Section, mediaItems: string[], config?: 
                     Write the summary at a PhD level.
 
                     Make sure to format your answer with markdown, 
-                    and make sure to always lead with two newlines
+                    and make sure to ALWAYS lead with two newlines
                     followed by the section name (${section.section_name})
                     as the heading. Always end with two newlines.
                     Do not offer any editorial opinion or analysis, and do not include any sort of
@@ -77,14 +77,22 @@ async function generateSection(section: Section, mediaItems: string[], config?: 
                     that they are true. Only state what was said and claimed by the deposed.
                     
                     Even if otherwise instructed, instead of providing citations in-line simply give a citation
-                    number (i.e. [1], [2], etc, in turn) and then provide the full source at the end of the section,
-                    formatted to show just the volume and page of the relevant document. An example would be:
+                    number (i.e. [1], [2], etc, in turn) and then provide the source at the end of the section,
+                    formatted to show just the volume and page of the relevant document. Do NOT show the full filename, just its volume number and the page. An example would be:
 
                     ...
                     Statement that includes a cited source [4]
                     ...
-                    
-                    [4]: Vol. 2 Page 56`
+
+                    [4]: Vol. 2 Page 56
+
+                    When you write out the citations, you don't need to put a line break between them, they can be all in one line, like so:
+                    [1]: Vol. 1 Page 100, [2]: Vol 3. Page 10, [3]: Vol 2. Page 15...`
+
+                    + await client(getDomainSpecificPromptInstr).executeFunction()
+
+    console.log("Section prompt:")
+    console.log(prompt)
 
     const constructedPromptMessages = await client(constructPromptMaybeWithSelectedDocuments).executeFunction({
         "question": prompt,
@@ -96,7 +104,7 @@ async function generateSection(section: Section, mediaItems: string[], config?: 
     var langchainMessages: BaseMessage[] = constructedPromptMessages.map(msg => {
         switch (msg.role) {
           case "system":
-            return new SystemMessage(msg.content);
+            return new HumanMessage(msg.content);
           case "user":
             return new HumanMessage(msg.content);
           case "assistant":
@@ -114,41 +122,48 @@ async function generateDepoSummary(depositionSubject: string, mediaItems: string
 
     console.log(`Generating deposition summary for ${depositionSubject}`)
 
-    const model = new ChatAnthropic({
-        modelName: "claude-3-5-sonnet-20241022",
-        anthropicApiKey: process.env.VITE_ANTHROPIC_API_KEY,
-        maxTokens: 8192
-    })
+    // const model = new ChatAnthropic({
+    //     modelName: "claude-3-5-sonnet-20241022",
+    //     anthropicApiKey: process.env.VITE_ANTHROPIC_API_KEY,
+    //     maxTokens: 8192
+    // })
 
-    const structured_model = model.withStructuredOutput(Outline, {"name": "Outline"})
+    // const structured_model = model.withStructuredOutput(Outline, {"name": "Outline"})
 
-    const example = await getExampleDocText()
+    // const example = await getExampleDocText()
 
-    var exampleText = ""
-    if (example !== undefined) {
-        console.log(`Got example text of length: ${example.length}`)
+    // var exampleText = ""
+    // if (example !== undefined) {
+    //     console.log(`Got example text of length: ${example.length}`)
 
-        exampleText = "Make sure to write in the same style as the following example document. Use the same structure, "+
-            "organization and order of presentation of information, and detail. Make absolutely sure not to use any of the actual information from the example, "+
-            "only use information present in the relevant transcript pages. The example is just to show how your answer should be structured and presented. "+
-            "Here is the example document:\n\n"+
-            example
-    }
+    //     exampleText = "Make sure to write in the same style as the following example document. Use the same structure, "+
+    //         "organization and order of presentation of information, and detail. Make absolutely sure not to use any of the actual information from the example, "+
+    //         "only use information present in the relevant transcript pages. The example is just to show how your answer should be structured and presented. "+
+    //         "Here is the example document:\n\n"+
+    //         example
+    // }
     
-    const get_outline_prompt = `Create an outline of a deposition summary for the deposition of ${depositionSubject}, based on the example deposition summary provided. Give a list of sections, a short description of the type of content to be included in each section sufficient as instruction to fill it with more detail later, and a description of the structure and format of each section (tables, bullet points, etc). Don't include an "Impression of Witness" section. Respond with valid JSON formatted as follows:\n\n[{{\"section_name\": SECTION_NAME, \"section_description\": SECTION_DESCRIPTION \"section_formatting\": SECTION_FORMATTING}}...]`
+    // const get_outline_prompt = `Create an outline of a deposition summary for the deposition of ${depositionSubject}, based on the example deposition summary provided. Give a list of sections, a short description of the type of content to be included in each section sufficient as instruction to fill it with more detail later, and a description of the structure and format of each section (tables, bullet points, etc). The miscellaneous section should not have any information present in other sections. Respond with valid JSON formatted as follows:\n\n[{{\"section_name\": SECTION_NAME, \"section_description\": SECTION_DESCRIPTION \"section_formatting\": SECTION_FORMATTING}}...]`
 
-    const prompt_template = ChatPromptTemplate.fromMessages([
-        ["user", exampleText],
-        ["user", get_outline_prompt]
-    ])
+    // const prompt_template = ChatPromptTemplate.fromMessages([
+    //     ["user", exampleText],
+    //     ["user", get_outline_prompt]
+    // ])
 
-    console.log("Outline and example prompt")
-    console.log(prompt_template)
+    // console.log("Outline and example prompt")
+    // console.log(prompt_template)
 
-    const get_outline_chain = prompt_template.pipe(structured_model)
-    const outline = await get_outline_chain.invoke({depositionSubject})
+    // const get_outline_chain = prompt_template.pipe(structured_model)
+    // const outline = await get_outline_chain.invoke({depositionSubject})
 
-    console.log("Outline:")
+    // console.log("Outline:")
+    // console.log(outline)
+
+    // outline from fn
+
+    const outline = JSON.parse(await client(getDomainSpecificOutlineTemplate).executeFunction())
+
+    console.log("Outline")
     console.log(outline)
 
     var sections = []
