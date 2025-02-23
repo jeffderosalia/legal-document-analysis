@@ -1,6 +1,5 @@
 import {
     constructPromptMaybeWithSelectedDocuments,
-    ExtractedExampleText,
     getDomainSpecificPromptInstr,
     getDomainSpecificOutlineTemplate
 } from "@legal-document-analysis/sdk";
@@ -9,18 +8,17 @@ import { z } from "zod";
 import client from "./client";
 import { ChatAnthropic, ChatAnthropicCallOptions } from "@langchain/anthropic";
 import { BaseLanguageModelInput } from "@langchain/core/language_models/base";
-import { AIMessage, BaseMessage, HumanMessage, SystemMessage } from "@langchain/core/messages";
+import { AIMessage, BaseMessage, HumanMessage} from "@langchain/core/messages";
 import { ChatOpenAI, ChatOpenAICallOptions } from "@langchain/openai";
-import {ChatPromptTemplate} from "@langchain/core/prompts"
 import { RunnableConfig } from "@langchain/core/runnables";
 import { tool } from "@langchain/core/tools"
 
 
-const getExampleDocText = async () : Promise<string | undefined> => {
-    const result = await client(ExtractedExampleText).where({mediaItemRid: {$eq: "ri.mio.main.media-item.0195244c-7091-7fd9-8893-4d020e600bb5" }}).fetchPage()
-    const doc = result.data.pop()
-    return doc?.rawText
-}
+// const getExampleDocText = async () : Promise<string | undefined> => {
+//     const result = await client(ExtractedExampleText).where({mediaItemRid: {$eq: "ri.mio.main.media-item.0195244c-7091-7fd9-8893-4d020e600bb5" }}).fetchPage()
+//     const doc = result.data.pop()
+//     return doc?.rawText
+// }
 
 const toolStartMessages: Record<string, string> = {"memoCreator": "Creating memo"}
 
@@ -36,7 +34,7 @@ type Section = {
     section_formatting: string
 }
 
-const Outline = z.object({sections: z.array(Section).describe("List of sections")})
+//const Outline = z.object({sections: z.array(Section).describe("List of sections")})
 
 const depositionSchema = z.object({
     depositionSubject: z.string().describe("The person being deposed")
