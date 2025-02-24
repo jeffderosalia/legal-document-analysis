@@ -91,8 +91,8 @@ async function generateSection(section: Section, mediaItems: string[], config?: 
 
                     + await client(getDomainSpecificPromptInstr).executeFunction()
 
-    console.log("Section prompt:")
-    console.log(prompt)
+    // console.log("Section prompt:")
+    // console.log(prompt)
 
     const constructedPromptMessages = await client(constructPromptMaybeWithSelectedDocuments).executeFunction({
         "question": prompt,
@@ -169,9 +169,11 @@ async function generateDepoSummary(depositionSubject: string, mediaItems: string
     var sections = []
 
     // One at a time or we'll get 429s
-    for (var i = 0; outline.sections.length; i++) {
-        var written_section = await generateSection(outline.sections[i], mediaItems, config)
-        sections.push(written_section)
+    for (var i = 0; i < outline.sections.length; i++) {
+        if (outline.sections[i] != null) {
+            var written_section = await generateSection(outline.sections[i], mediaItems, config)
+            sections.push(written_section)
+        }
     }
     
     console.log("sections:")

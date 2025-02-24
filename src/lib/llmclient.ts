@@ -57,11 +57,17 @@ class StreamingHandler extends BaseCallbackHandler {
       parentRunId?: string | undefined,
       tags?: string[] | undefined)
       : Promise<void> {
+        console.log('handleToolEnd');
         if (this.onToolEnd) {
+          console.log('invoke onToolEnd');
+
           this.onToolEnd(output, runId, parentRunId, tags)
         }
     }
-    async handleToolError(): Promise<void> {}
+    async handleToolError(error: Error): Promise<void> {
+      console.log('handleToolError');
+      if (this.onError) this.onError(error);
+    }
 }
   
 // input: BaseLanguageModelInput, options?: (ChatAnthropicCallOptions & ChatOpenAICallOptions) | undefined

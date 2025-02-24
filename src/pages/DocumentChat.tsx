@@ -192,6 +192,7 @@ const DocumentChat: React.FC = () => {
       let fullResponse = '';
 
       const writeToChat = (token: string) => {
+        console.log('writeToChat')
         fullResponse += token;
         const newMessages = [...messages];
         newMessages[newMessages.length-1].answers[index].content = fullResponse;
@@ -199,6 +200,7 @@ const DocumentChat: React.FC = () => {
       }
 
       const saveMessage = () => {
+        console.log('saveMessage')
         if (index === 0) {
           storeChatMessage(messages[messages.length-1])
         }
@@ -209,30 +211,44 @@ const DocumentChat: React.FC = () => {
         newMessages[newMessages.length-1].answers[index].content = fullResponse;
         setMessages(newMessages);
       }
+      const onToolStart = (
+        _tool: Serialized,
+        _input: string,
+        _runId: string,
+        _parentRunId: string,
+        tags: string[]) => {
+        console.log("tool started")
+        console.log(tags)
+      };
+      const onToolEnd = (
+        _output: ToolMessage,
+        _runId: string,
+        _parentRunId?: string | undefined,
+        _tags?: string[] | undefined) => {
+          console.log("tool finished")
+          saveMessage()
+      };
 
-      await chat(p.provider, p.model, allMessages, mediaItems, p.apiKey, {
-        streaming: true,
-        onToken: writeToChat,
-        onComplete: saveMessage,
-        onError: onError,
-        onToolStart: (
-          _tool: Serialized,
-          _input: string,
-          _runId: string,
-          _parentRunId: string,
-          tags: string[]) => {
-          console.log("tool started")
-          console.log(tags)
-        },
-        onToolEnd: (
-          _output: ToolMessage,
-          _runId: string,
-          _parentRunId?: string | undefined,
-          _tags?: string[] | undefined) => {
-            //saveMessage()
-            console.log("tool finished")
-        }
-      });
+
+      if (p.provider === 'anthropic_with_example')
+      {
+        await chat(p.provider, p.model, allMessages, mediaItems, p.apiKey, {
+          streaming: true,
+          onToken: writeToChat,
+          onError: onError,
+          onToolStart: onToolStart,
+          onToolEnd: onToolEnd
+        });
+  
+      }else {
+        await chat(p.provider, p.model, allMessages, mediaItems, p.apiKey, {
+          streaming: true,
+          onToken: writeToChat,
+          onComplete: saveMessage,
+          onError: onError
+        });
+      }
+
     }));
   }, [providers, messages]);;
 
