@@ -1,13 +1,15 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import "./DocumentChat.css";
-import { ChevronRight, File, Folder, MessagesSquare, SquarePen, PanelLeft} from 'lucide-react';
+import { MessagesSquare, SquarePen, PanelLeft} from 'lucide-react';
 import { ChatDisplay } from '../components/ChatDisplay';
 import { ChatInput } from '../components/ChatInput';
 import { DropdownSelector } from '../components/DropdownSelector';
 import {CreateCollectionModal} from '../components/CreateCollectionModal'
 import { CollapsibleSection, CollapsibleGroup } from '../components/Collapsible';
-import {FileUpload} from '../components/FileUpload'
-import {GearMenu } from '../components/GearMenu'
+import { DocumentTreeView } from '../components/DocumentTreeView';
+// import { ExpandableResizablePanel } from '../components/ExpandableResizablePanel';
+// import {FileUpload} from '../components/FileUpload'
+// import {GearMenu } from '../components/GearMenu'
 import { createPrompt, getAllDocuments, getUser } from '../lib/osdk';
 import { createCollection, getFileCollection, deleteCollection } from '../lib/osdkCollections';
 import {uploadMedia} from '../lib/osdkMedia';
@@ -27,9 +29,8 @@ const DocumentChat: React.FC = () => {
   const [collections, setCollections] = useState<Osdk.Instance<FileCollection>[]>([]);
   const [documents, setDocuments] = useState<Document>();
   const [recentChats, setRecentChats]= useState<any[]>([])
-  const [selectedDocs, setSelectedDocs] = useState<Document[]>([]);
+  const [selectedDocs, setSelectedDocs] = useState<string[]>([]);
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
-  const [expandedFolders, setExpandedFolders] = useState<string[]>(['projects', 'marketing']);
   const [loadingLLM, setLoadingLLM] = useState<Boolean>(false);
   const [messages, setMessages] = useState<MessageGroup[]>([]);
   const [questionCount, setQuestionCount] = useState<number>(0);
@@ -49,17 +50,15 @@ const DocumentChat: React.FC = () => {
       onClick: () => console.log('delete') 
     }
   ];
-  
+
   useEffect(() => {
     if (messages.length > 0 && loadingLLM) {
-      const mediaItems = selectedDocs.map(m=> m.id);
-
       const historyString = messages.slice(0, -1).map(msg =>
           `USER: ${msg.question.content}
           ASSISTANT: ${msg.answers.map(ans => ans.content).join("\n")}`
         ).join("\n\n")
 
-      createPrompt(messages[messages.length - 1].question.content, mediaItems, historyString, sendChatCB);
+      createPrompt(messages[messages.length - 1].question.content, selectedDocs, historyString, sendChatCB);
     }
   }, [messages, loadingLLM]);
   const fetchDocuments = async (firstTime: boolean = false) => {
@@ -153,32 +152,6 @@ const DocumentChat: React.FC = () => {
     }
   };
 
-  const toggleFolder = (folderId: string): void => {
-    setExpandedFolders(prev => 
-      prev.includes(folderId)
-        ? prev.filter(id => id !== folderId)
-        : [...prev, folderId]
-    );
-  };
-
-  const toggleDocument = (doc: Document): void => {
-    setSelectedDocs(prev =>
-      prev.find(m=> m.id == doc.id) === undefined
-        ? [...prev, doc]
-        : prev.filter(docx => docx.id !== doc.id)
-    );
-  };
-  const toggleCollection= (doc: Document): void => {
-    if (doc.children) {
-      doc?.children.forEach(m=> toggleDocument(m));
-    }
-    setSelectedDocs(prev =>
-      prev.find(m=> m.id == doc.id) === undefined
-        ? [...prev, doc]
-        : prev.filter(docx => docx.id !== doc.id)
-    );
-  };
-
   const sendChatCB = useCallback(async (question: Message[], mediaItems: string[]) => {
     console.log("sendChatCB messages at start:", messages);
     setLoadingLLM(false);
@@ -192,6 +165,7 @@ const DocumentChat: React.FC = () => {
       let fullResponse = '';
 
       const writeToChat = (token: string) => {
+        console.log('writeToChat');
         fullResponse += token;
         const newMessages = [...messages];
         newMessages[newMessages.length-1].answers[index].content = fullResponse;
@@ -199,6 +173,7 @@ const DocumentChat: React.FC = () => {
       }
 
       const saveMessage = () => {
+        console.log('saveMessage');
         if (index === 0) {
           storeChatMessage(messages[messages.length-1])
         }
@@ -235,26 +210,6 @@ const DocumentChat: React.FC = () => {
       });
     }));
   }, [providers, messages]);;
-
-  const handleSelectAll = () => {
-    function flattenDocuments(documents: Document[]): Document[] {
-      return documents.reduce((acc: Document[], doc) => {
-        acc.push(doc);
-        if (doc.children) {
-          acc.push(...flattenDocuments(doc.children));
-        }
-        return acc;
-      }, []);
-    }
-    if (selectAll) {
-      setSelectedDocs([]);
-    } else {
-
-      if (documents != null && documents.children != null)
-        setSelectedDocs(flattenDocuments(documents?.children))
-    }
-    setSelectAll(!selectAll);
-  };
 
   const handleCreateCollection =  (collectioninfo: any) => {
     console.log(collectioninfo);
@@ -317,59 +272,12 @@ const DocumentChat: React.FC = () => {
     setLoadingLLM(true);
   };
 
-  const renderItem = (item: Document, depth: number = 0, parent: Document | null = null): React.ReactNode => {
-    const isFolder = item.type === 'folder';
-    const isExpanded = expandedFolders.includes(item.id);
-    const isSelected = selectedDocs.find(m => m.id === item.id) !== undefined;
 
-    return (
-      <div key={item.id}>
-        <div 
-          className={`tree-item ${isFolder ? 'folder' : 'file'} ${isSelected ? 'selected' : ''}`}
-          style={{ paddingLeft: `${depth * 20}px` }}
-        >
-          {isFolder ? (
-            <>
-              <span className="checkbox-wrapper">
-                <input
-                  type="checkbox"
-                  checked={isSelected}
-                  onChange={() => toggleCollection(item)}
-                />
-              </span>
-              <ChevronRight
-                className={`icon chevron ${isExpanded ? 'expanded' : ''}`}
-                onClick={() => toggleFolder(item.id)}
-            />
-            </>
-          ) : (
-            <span className="checkbox-wrapper">
-            <input
-              type="checkbox"
-              checked={isSelected}
-              onChange={() => toggleDocument(item)}
-            />
-            </span>
-          )}
-          
-          {isFolder ? <Folder className="icon p5" /> : <File className="icon p5" />}
-          <span className="item-name">{item.name}</span>
-          {!isFolder && parent != null &&  (
-            <a className="x" onClick={() => handleRemoveFromCollection(item.id, parent)}>X</a>
-          )}
-        </div>
-
-        {isFolder && isExpanded && item.children && (
-          <div className="children">
-            {item.children.map(child => renderItem(child, depth + 1, item))}
-          </div>
-        )}
-      </div>
-    );
-  };
 
   return (
     <div className="app-container">
+      {/* <ExpandableResizablePanel minWidth={256}> */}
+        
       <div className={sidebarOpen ? 'sidebar open' : 'sidebar collapsed'}>
         <div id="nav-buttons">
           <button title={sidebarOpen ? 'Collapse Sidebar' : 'Expand Sidebar'} className="toggle-sidebar button p7" onClick={()=> {setSidebarOpen(!sidebarOpen)}}><PanelLeft stroke='#666'  /></button>
@@ -393,33 +301,14 @@ const DocumentChat: React.FC = () => {
             </CollapsibleSection>
 
             <CollapsibleSection id="docs" title="DocumentSets" className="collections-container">
-
-              <>
-                <label className="checkbox-wrapper">
-                    <input
-                      type="checkbox"
-                      checked={selectAll}
-                      onChange={handleSelectAll}
-                    />
-                    &nbsp;&nbsp;Select All
-                </label>
-
-                <div className="sidebar-header">
-                  <GearMenu actions={actions} />
-
-                  <div style={{'display': 'none'}}>
-                  <FileUpload onFileSelect={handleFileUpload} />
-                  </div>
-                </div>
-
-                {documents && documents.children?.map(item => renderItem(item))}
-              </>
+                <DocumentTreeView documents={documents} setSelectedDocs={setSelectedDocs} />
             </CollapsibleSection>
           </CollapsibleGroup>
 
 
         </div>
       </div>
+      {/* </ExpandableResizablePanel> */}
 
       <div className="main-content">
         {user && (

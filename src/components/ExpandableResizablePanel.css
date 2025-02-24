@@ -1,0 +1,25 @@
+.panel-container {
+    display: flex;
+    align-items: start;
+  }
+  
+  .panel {
+    position: relative;
+    overflow: hidden;
+  }
+
+  
+  .resizer {
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 5px;
+    height: 100%;
+    cursor: ew-resize;
+    background: #ccc;
+  }
+  
+  .resizer:hover {
+    background: #888;
+  }
+  

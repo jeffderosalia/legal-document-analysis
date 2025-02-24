@@ -5,13 +5,13 @@ import {Document} from '../types'
 interface CollectionCreationModalProps {
   isOpen: boolean;
   onClose: () => void;
-  documents: Document[];
+  documents: string[];
   onCreateCollection: (collection: CollectionData) => void;
 }
 
 interface CollectionData {
   name: string;
-  documents: Document[];
+  documents: string[];
 }
 
 export const CreateCollectionModal: React.FC<CollectionCreationModalProps> = ({ 
@@ -80,10 +80,10 @@ export const CreateCollectionModal: React.FC<CollectionCreationModalProps> = ({
             <div className="documents-list">
               {documents.map((doc, index) => (
                 <div 
-                  key={doc.id || index}
+                  key={doc || index}
                   className="document-item"
                 >
-                  {doc.name || `Document ${index + 1}`}
+                  {doc || `Document ${index + 1}`}
                 </div>
               ))}
             </div>
