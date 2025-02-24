@@ -235,7 +235,7 @@ async function invokeWithExample(
 
     const model_with_tools = model_instance.bindTools([depositionSummaryCreator])
 
-    const tool_call = await model_with_tools.invoke(messages)
+    const tool_call = await model_with_tools.invoke(messages, options)
     options.tags = ["startingMemoGen"]
 
     if (tool_call.tool_calls !== undefined && tool_call.tool_calls.length > 0) {
@@ -248,3 +248,4 @@ async function invokeWithExample(
 
 
 export {invokeWithExample, toolStartMessages}
+

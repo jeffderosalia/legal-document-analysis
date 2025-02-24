@@ -13,12 +13,14 @@ import { createCollection, getFileCollection, deleteCollection } from '../lib/os
 import {uploadMedia} from '../lib/osdkMedia';
 import { addToChat, getChatLog } from '../lib/osdkChatLog';
 import { chat } from '../lib/llmclient';
-import { Document, Message, MessageGroup, UIProvider } from '../types';
+import { Document, Message, MessageGroup, TOOL_USE_PREFIX, UIProvider } from '../types';
 import { Osdk  } from "@osdk/client";
 import { FileCollection, createChatLog } from "@legal-document-analysis/sdk";
 import {Header} from '../components/Header';
 import { Serialized } from '@langchain/core/load/serializable';
-import { ToolMessage } from '@langchain/core/messages';
+import { AIMessageChunk, ToolMessage } from '@langchain/core/messages';
+import { HandleLLMNewTokenCallbackFields, NewTokenIndices } from '@langchain/core/callbacks/base';
+import { ChatGenerationChunk } from '@langchain/core/outputs';
 
 const DocumentChat: React.FC = () => {
   const [user, setUser] = useState<any>();
@@ -184,19 +186,81 @@ const DocumentChat: React.FC = () => {
     setLoadingLLM(false);
     const enabledProviders = providers.filter(p => p.enabled);
     const allMessages = [...question];
-    allMessages[0].content += "\nCreate all tables using markdown";
     console.log("allMessages");
     console.log(allMessages);
   
     await Promise.all(enabledProviders.map(async (p, index) => {
       let fullResponse = '';
 
+      // // This serves as a buffer so we don't print any tool calls
+      // let responsesSoFar: string[] = [];
+
+      // const renderResponses = (until: number | undefined) => {
+      //   if (!fullResponse.includes(TOOL_USE_PREFIX)) {
+      //     const newMessages = [...messages];
+      //     if (until !== undefined) {
+      //       until = -until
+      //     }
+      //     newMessages[newMessages.length-1].answers[index].content = responsesSoFar.slice(0, until).join("")
+      //     setMessages(newMessages)
+      //   } else {
+      //     console.log("Not rendering token, tool use detected")
+      //   }
+      // }
+
+      // const writeToChat = (token: string) => {
+      //   const numberToBuffer = 10;
+        
+      //   console.log('writeToChat')
+
+      //   fullResponse += token;
+      //   responsesSoFar.push(token)
+      //   renderResponses(numberToBuffer)
+      // }
+
       const writeToChat = (token: string) => {
-        console.log('writeToChat')
+        //console.log('writeToChat')
         fullResponse += token;
         const newMessages = [...messages];
         newMessages[newMessages.length-1].answers[index].content = fullResponse;
         setMessages(newMessages);
+      }
+
+      // const onToken = (
+      //   token: string,
+      //   idx: NewTokenIndices,
+      //   runId: string,
+      //   parentRunId?: string | undefined,
+      //   tags?: string[] | undefined,
+      //   fields?: HandleLLMNewTokenCallbackFields | undefined) => {
+      
+      //     if (fields?.chunk) {
+      //       const chunkAsChatChunk = fields.chunk as ChatGenerationChunk
+      //       const chatMessage = chunkAsChatChunk.message as AIMessageChunk
+      //     }
+        
+      // }
+
+      const onToken = (
+        token: string,
+        idx: NewTokenIndices,
+        runId: string,
+        parentRunId?: string | undefined,
+        tags?: string[] | undefined,
+        fields?: HandleLLMNewTokenCallbackFields | undefined) => {
+      
+          if (fields?.chunk) {
+            const chunkAsChatChunk = fields.chunk as ChatGenerationChunk
+            const chatMessage = chunkAsChatChunk.message as AIMessageChunk
+
+            if ((chatMessage.tool_calls !== undefined && chatMessage.tool_calls.length > 0) || 
+                (chatMessage.tool_call_chunks !== undefined && chatMessage.tool_call_chunks.length > 0)) {
+              console.log(`Tool call detected, not rendering token: ${token}`)
+              return undefined
+            }
+          }
+        
+        writeToChat(token)
       }
 
       const saveMessage = () => {
@@ -205,21 +269,24 @@ const DocumentChat: React.FC = () => {
           storeChatMessage(messages[messages.length-1])
         }
       }
+
       const onError = () => {
         fullResponse += "Unexpected error at the provider. Try again later.";
         const newMessages = [...messages];
         newMessages[newMessages.length-1].answers[index].content = fullResponse;
         setMessages(newMessages);
       }
+
       const onToolStart = (
         _tool: Serialized,
         _input: string,
         _runId: string,
         _parentRunId: string,
         tags: string[]) => {
-        console.log("tool started")
-        console.log(tags)
+          console.log("tool started")
+          console.log(tags)
       };
+
       const onToolEnd = (
         _output: ToolMessage,
         _runId: string,
@@ -229,12 +296,11 @@ const DocumentChat: React.FC = () => {
           saveMessage()
       };
 
-
       if (p.provider === 'anthropic_with_example')
       {
         await chat(p.provider, p.model, allMessages, mediaItems, p.apiKey, {
           streaming: true,
-          onToken: writeToChat,
+          onToken: onToken,
           onError: onError,
           onToolStart: onToolStart,
           onToolEnd: onToolEnd
@@ -243,7 +309,7 @@ const DocumentChat: React.FC = () => {
       }else {
         await chat(p.provider, p.model, allMessages, mediaItems, p.apiKey, {
           streaming: true,
-          onToken: writeToChat,
+          onToken: onToken,
           onComplete: saveMessage,
           onError: onError
         });

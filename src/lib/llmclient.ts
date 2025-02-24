@@ -8,7 +8,7 @@ import {
   AIMessageChunk,
   ToolMessage,
 } from "@langchain/core/messages";
-import { BaseCallbackHandler } from "@langchain/core/callbacks/base";
+import { BaseCallbackHandler, HandleLLMNewTokenCallbackFields, NewTokenIndices } from "@langchain/core/callbacks/base";
 import { StreamingCallback, StreamingCallbackEnd, StreamingError, Provider, Message, ChatOptions, ToolCallbackStart, ToolCallbackEnd  } from "../types";
 import { invokeWithExample } from "./gen_with_example";
 import { BaseLanguageModelInput } from "@langchain/core/language_models/base";
@@ -27,19 +27,30 @@ class StreamingHandler extends BaseCallbackHandler {
       super();
     }
   
-    async handleLLMNewToken(token: string) {
-      this.onToken(token);
+    async handleLLMNewToken(
+      token: string,
+      idx: NewTokenIndices,
+      runId: string,
+      parentRunId?: string | undefined,
+      tags?: string[] | undefined,
+      fields?: HandleLLMNewTokenCallbackFields | undefined) {
+        this.onToken(token, idx, runId, parentRunId, tags, fields);
     }
+
     async handleLLMStart(): Promise<void> {}
+
     async handleLLMEnd(): Promise<void> {
       if (this.onComplete) this.onComplete();
-    }   
+    }
+
     async handleLLMError(error: Error): Promise<void> {
       if (this.onError) this.onError(error);
     }
+
     async handleChainStart(): Promise<void> {}
     async handleChainEnd(): Promise<void> {}
     async handleChainError(): Promise<void> {}
+
     async handleToolStart(
       tool: Serialized,
       input: string,
@@ -51,6 +62,7 @@ class StreamingHandler extends BaseCallbackHandler {
           this.onToolStart(tool, input, runId, parentRunId, tags)
         }
     }
+
     async handleToolEnd(
       output: ToolMessage,
       runId: string,
@@ -64,6 +76,7 @@ class StreamingHandler extends BaseCallbackHandler {
           this.onToolEnd(output, runId, parentRunId, tags)
         }
     }
+
     async handleToolError(error: Error): Promise<void> {
       console.log('handleToolError');
       if (this.onError) this.onError(error);
@@ -132,10 +145,10 @@ export async function chat(
     ? [new StreamingHandler(onToken, onComplete, onError, onToolStart, onToolEnd)]
     : undefined;
 
-  const isNotFirstMessage = !messages.some(msg => msg.content.includes("Here is the history of your conversation up until now"))
+  //const isNotFirstMessage = !messages.some(msg => msg.content.includes("Here is the history of your conversation up until now"))
 
   try {
-    if (provider === "anthropic_with_example" && isNotFirstMessage){
+    if (provider === "anthropic_with_example"){
       const response = await invokeWithExample(model_instance, langchainMessages, mediaItems, { callbacks });
       console.log("Complete doc:")
       console.log(response)

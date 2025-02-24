@@ -1,3 +1,4 @@
+import { HandleLLMNewTokenCallbackFields, NewTokenIndices } from "@langchain/core/callbacks/base";
 import { Serialized } from "@langchain/core/load/serializable";
 import { ToolMessage } from "@langchain/core/messages";
 
@@ -13,8 +14,17 @@ export interface DocumentNode extends Document {
 }
 export type Provider = "openai" | "anthropic" | "anthropic_with_example";
 
-export type StreamingCallback = (token: string) => void;
+
+export type StreamingCallback = (
+  token: string,
+  idx: NewTokenIndices,
+  runId: string,
+  parentRunId?: string | undefined,
+  tags?: string[] | undefined,
+  fields?: HandleLLMNewTokenCallbackFields | undefined) => void;
+
 export type StreamingCallbackEnd = () => void;
+
 export type StreamingError = (error: Error) => void;
 
 export type ToolCallbackStart = (
@@ -23,6 +33,7 @@ export type ToolCallbackStart = (
   runId: string,
   parentRunId: string,
   tags: string[]) => void;
+
 export type ToolCallbackEnd = (
   output: ToolMessage,
   runId: string,
@@ -67,3 +78,5 @@ export type UIProvider = {
   enabled: boolean;
   apiKey: string;
 }
+
+export const TOOL_USE_PREFIX = "TOOL_CALL_START"
