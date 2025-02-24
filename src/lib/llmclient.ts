@@ -145,8 +145,6 @@ export async function chat(
     ? [new StreamingHandler(onToken, onComplete, onError, onToolStart, onToolEnd)]
     : undefined;
 
-  //const isNotFirstMessage = !messages.some(msg => msg.content.includes("Here is the history of your conversation up until now"))
-
   try {
     if (provider === "anthropic_with_example"){
       const response = await invokeWithExample(model_instance, langchainMessages, mediaItems, { callbacks });

@@ -192,32 +192,6 @@ const DocumentChat: React.FC = () => {
     await Promise.all(enabledProviders.map(async (p, index) => {
       let fullResponse = '';
 
-      // // This serves as a buffer so we don't print any tool calls
-      // let responsesSoFar: string[] = [];
-
-      // const renderResponses = (until: number | undefined) => {
-      //   if (!fullResponse.includes(TOOL_USE_PREFIX)) {
-      //     const newMessages = [...messages];
-      //     if (until !== undefined) {
-      //       until = -until
-      //     }
-      //     newMessages[newMessages.length-1].answers[index].content = responsesSoFar.slice(0, until).join("")
-      //     setMessages(newMessages)
-      //   } else {
-      //     console.log("Not rendering token, tool use detected")
-      //   }
-      // }
-
-      // const writeToChat = (token: string) => {
-      //   const numberToBuffer = 10;
-        
-      //   console.log('writeToChat')
-
-      //   fullResponse += token;
-      //   responsesSoFar.push(token)
-      //   renderResponses(numberToBuffer)
-      // }
-
       const writeToChat = (token: string) => {
         //console.log('writeToChat')
         fullResponse += token;
@@ -226,21 +200,6 @@ const DocumentChat: React.FC = () => {
         setMessages(newMessages);
       }
 
-      // const onToken = (
-      //   token: string,
-      //   idx: NewTokenIndices,
-      //   runId: string,
-      //   parentRunId?: string | undefined,
-      //   tags?: string[] | undefined,
-      //   fields?: HandleLLMNewTokenCallbackFields | undefined) => {
-      
-      //     if (fields?.chunk) {
-      //       const chunkAsChatChunk = fields.chunk as ChatGenerationChunk
-      //       const chatMessage = chunkAsChatChunk.message as AIMessageChunk
-      //     }
-        
-      // }
-
       const onToken = (
         token: string,
         idx: NewTokenIndices,
@@ -248,18 +207,18 @@ const DocumentChat: React.FC = () => {
         parentRunId?: string | undefined,
         tags?: string[] | undefined,
         fields?: HandleLLMNewTokenCallbackFields | undefined) => {
-      
+
           if (fields?.chunk) {
             const chunkAsChatChunk = fields.chunk as ChatGenerationChunk
             const chatMessage = chunkAsChatChunk.message as AIMessageChunk
 
-            if ((chatMessage.tool_calls !== undefined && chatMessage.tool_calls.length > 0) || 
+            if ((chatMessage.tool_calls !== undefined && chatMessage.tool_calls.length > 0) ||
                 (chatMessage.tool_call_chunks !== undefined && chatMessage.tool_call_chunks.length > 0)) {
               console.log(`Tool call detected, not rendering token: ${token}`)
               return undefined
             }
           }
-        
+
         writeToChat(token)
       }
 
