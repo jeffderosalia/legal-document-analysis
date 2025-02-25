@@ -12,7 +12,7 @@ export interface Document {
 export interface DocumentNode extends Document {
   children: DocumentNode[];
 }
-export type Provider = "openai" | "openai-o1" | "anthropic" | "anthropic_with_example";
+export type Provider = "openai" | "anthropic";
 
 
 export type StreamingCallback = (
@@ -71,7 +71,7 @@ export interface ChatOptions {
 }
 
 export type UIProvider = {
-  id: 'chatgpt' | 'chatgpt-o1' | 'anthropic' | 'anthropic_with_example';
+  id: string;
   provider: Provider;
   model: string;
   name: string;

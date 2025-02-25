@@ -39,7 +39,7 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({ message }) => (
     </ReactMarkdown>
     {message.provider && (
       <span className="provider"> 
-        {message.provider.toLowerCase() == 'chatgpt' ? <ChatGpt /> : <Anthopic /> }
+        {message.provider.toLowerCase().startsWith('chatgpt') ? <ChatGpt /> : <Anthopic /> }
        </span>
     )}
   </div>

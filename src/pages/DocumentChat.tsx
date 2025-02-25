@@ -52,7 +52,7 @@ const DocumentChat: React.FC = () => {
       enabled: false,
       apiKey: process.env.VITE_OPENAI_API_KEY || "x",
       maxTokens: 128000 },
-    { id: 'anthropic',
+    { id: 'anthropic35',
       provider: 'anthropic',
       model: 'claude-3-5-sonnet-20241022',
       name: 'Anthropic 3.5 Sonnet',
@@ -60,7 +60,7 @@ const DocumentChat: React.FC = () => {
       enabled: false,
       apiKey: process.env.VITE_ANTHROPIC_API_KEY || "x",
       maxTokens: 200000 },
-    { id: 'anthropic',
+    { id: 'anthropic37',
       provider: 'anthropic',
       model: 'claude-3-7-sonnet-20250219',
       name: 'Anthropic 3.7 Sonnet',
@@ -70,9 +70,9 @@ const DocumentChat: React.FC = () => {
       maxTokens: 200000 },
     { id: 'anthropic_with_example',
       provider: 'anthropic',
-      model: 'claude-3-7-sonnet-20250219',
-      name: 'Anthropic 3.7 Sonnet for Memos',
-      subtext: 'Hybrid reasoning model',
+      model: 'claude-3-5-sonnet-20241022',
+      name: 'Anthropic 3.5 Sonnet for Memos',
+      subtext: 'Intelligent model',
       enabled: false,
       apiKey: process.env.VITE_ANTHROPIC_API_KEY || "x",
       maxTokens: 200000 }
@@ -300,7 +300,7 @@ const DocumentChat: React.FC = () => {
           saveMessage()
       };
 
-      if (p.provider === 'anthropic_with_example')
+      if (p.id === 'anthropic_with_example')
       {
         await chat(p, allMessages, mediaItems, p.apiKey, historyString, {
           streaming: true,
