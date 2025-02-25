@@ -83,6 +83,7 @@ const DocumentChat: React.FC = () => {
 
       const historyString = messages.slice(0, -1).map(msg =>
           `USER: ${msg.question.content}
+
           ASSISTANT: ${msg.answers.map(ans => ans.content).join("\n")}`
         ).join("\n\n")
 
@@ -208,7 +209,7 @@ const DocumentChat: React.FC = () => {
     );
   };
 
-  const sendChatCB = useCallback(async (question: Message[], mediaItems: string[]) => {
+  const sendChatCB = useCallback(async (question: Message[], mediaItems: string[], historyString: string) => {
     console.log("sendChatCB messages at start:", messages);
     setLoadingLLM(false);
     const enabledProviders = providers.filter(p => p.enabled);
@@ -256,6 +257,11 @@ const DocumentChat: React.FC = () => {
         }
       }
 
+      const onComplete = () => {
+        writeToChat("\n\n")
+        saveMessage()
+      }
+
       const onError = () => {
         fullResponse += "Unexpected error at the provider. Try again later.";
         const newMessages = [...messages];
@@ -284,19 +290,20 @@ const DocumentChat: React.FC = () => {
 
       if (p.provider === 'anthropic_with_example')
       {
-        await chat(p, allMessages, mediaItems, p.apiKey, {
+        await chat(p, allMessages, mediaItems, p.apiKey, historyString, {
           streaming: true,
           onToken: onToken,
+          onComplete: onComplete,
           onError: onError,
           onToolStart: onToolStart,
           onToolEnd: onToolEnd
         });
   
       } else {
-        await chat(p, allMessages, mediaItems, p.apiKey, {
+        await chat(p, allMessages, mediaItems, p.apiKey, historyString, {
           streaming: true,
           onToken: onToken,
-          onComplete: saveMessage,
+          onComplete: onComplete,
           onError: onError
         });
       }

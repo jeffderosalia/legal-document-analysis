@@ -1,15 +1,14 @@
 import { ChatOpenAI, ChatOpenAICallOptions } from "@langchain/openai";
 import { ChatAnthropic, ChatAnthropicCallOptions } from "@langchain/anthropic";
 import { 
-  HumanMessage, 
-  SystemMessage, 
+  HumanMessage,
   AIMessage,
   BaseMessage, 
   AIMessageChunk,
   ToolMessage,
 } from "@langchain/core/messages";
 import { BaseCallbackHandler, HandleLLMNewTokenCallbackFields, NewTokenIndices } from "@langchain/core/callbacks/base";
-import { StreamingCallback, StreamingCallbackEnd, StreamingError, Provider, Message, ChatOptions, ToolCallbackStart, ToolCallbackEnd, UIProvider  } from "../types";
+import { StreamingCallback, StreamingCallbackEnd, StreamingError, Message, ChatOptions, ToolCallbackStart, ToolCallbackEnd, UIProvider  } from "../types";
 import { invokeWithExample } from "./gen_with_example";
 import { BaseLanguageModelInput } from "@langchain/core/language_models/base";
 import { Serialized } from "@langchain/core/load/serializable";
@@ -97,11 +96,12 @@ export async function chat(
   messages: Message[],
   mediaItems: string[],
   apiKey: string,
+  historyString: string,
   options: ChatOptions = {}
 ) {
   const { 
     streaming = false, 
-    temperature = 1, 
+    temperature = .75,
     onToken,
     onComplete,
     onError,
@@ -146,13 +146,10 @@ export async function chat(
 
   try {
     if (uiProvider.id === "anthropic_with_example"){
-      const response = await invokeWithExample(model_instance, langchainMessages, mediaItems, { callbacks });
-      console.log("Complete doc:")
-      console.log(response)
+      const response = await invokeWithExample(model_instance, langchainMessages, mediaItems, historyString, { callbacks });
       return response?.content;
     } else {
-      console.log('allMessages', langchainMessages)
-
+      //console.log('allMessages', langchainMessages)
       const response = await basic_invoke(model_instance, langchainMessages, { callbacks });
       return response.content;
     }

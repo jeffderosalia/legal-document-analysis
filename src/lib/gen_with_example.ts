@@ -1,30 +1,29 @@
 import {
     constructPromptMaybeWithSelectedDocuments,
     getDomainSpecificPromptInstr,
-    getDomainSpecificOutlineTemplate
+    getDomainSpecificOutlineTemplate,
+    ExtractedExampleText
 } from "@legal-document-analysis/sdk";
 import { z } from "zod";
 
 import client from "./client";
 import { ChatAnthropic, ChatAnthropicCallOptions } from "@langchain/anthropic";
-import { BaseLanguageModelInput } from "@langchain/core/language_models/base";
-import { AIMessage, BaseMessage, HumanMessage} from "@langchain/core/messages";
+import { AIMessage, AIMessageChunk, BaseMessage, HumanMessage} from "@langchain/core/messages";
 import { ChatOpenAI, ChatOpenAICallOptions } from "@langchain/openai";
 import { RunnableConfig } from "@langchain/core/runnables";
 import { tool } from "@langchain/core/tools"
+import { estimateMaxDocuments } from "./osdk";
 
 
-// const getExampleDocText = async () : Promise<string | undefined> => {
-//     const result = await client(ExtractedExampleText).where({mediaItemRid: {$eq: "ri.mio.main.media-item.0195244c-7091-7fd9-8893-4d020e600bb5" }}).fetchPage()
-//     const doc = result.data.pop()
-//     return doc?.rawText
-// }
-
-const toolStartMessages: Record<string, string> = {"memoCreator": "Creating memo"}
+const getExampleDocText = async () : Promise<string | undefined> => {
+    const result = await client(ExtractedExampleText).where({mediaItemRid: {$eq: "ri.mio.main.media-item.0195244c-7091-7fd9-8893-4d020e600bb5" }}).fetchPage()
+    const doc = result.data.pop()
+    return doc?.rawText
+}
 
 const Section = z.object({
     section_name: z.string().describe("The name of the section"),
-    section_description: z.string().describe("A short description of the type of content to be included in each section sufficient as instruction to fill in with more detail later"),
+    section_description: z.string().describe("A description of the type of content to be included in each section sufficient as instruction to fill in with more detail later"),
     section_formatting: z.string().describe("A description of the structure and format of each section (tables, bullet points, etc)")
 })
 
@@ -34,22 +33,26 @@ type Section = {
     section_formatting: string
 }
 
-//const Outline = z.object({sections: z.array(Section).describe("List of sections")})
+const Outline = z.object({sections: z.array(Section).describe("List of sections")})
 
 const depositionSchema = z.object({
     depositionSubject: z.string().describe("The person being deposed")
   });
 
 
-async function generateSection(section: Section, mediaItems: string[], config?: RunnableConfig){
+async function generateSection(section: Section, mediaItems: string[], sectionsSoFar: AIMessageChunk[], historyString: string, config?: RunnableConfig){
 
     console.log(`Generating section: ${section.section_name}`)
 
+    const maxTokens = 128000
     const section_model = new ChatOpenAI({
         modelName: "gpt-4o",
         streaming: true,
         openAIApiKey: process.env.VITE_OPENAI_API_KEY,
+        maxTokens: -1
     })
+
+    const sectionsGeneratedMessages = sectionsSoFar.map(m => new AIMessage(m.content as string))
 
     const prompt = `Write the following section of a deposition summary: ${section.section_name}.
                     Use only the information in the document excerpts provided.
@@ -68,13 +71,15 @@ async function generateSection(section: Section, mediaItems: string[], config?: 
                     Write the summary at a PhD level.
 
                     Make sure to format your answer with markdown, 
-                    and make sure to ALWAYS lead with two newlines
+                    and make sure to ALWAYS lead with a new paragraph (separated with some white space)
                     followed by the section name (${section.section_name})
                     as the heading. Always end with two newlines.
                     Do not offer any editorial opinion or analysis, and do not include any sort of
                     post-script or conclusion paragraph. Only summarize and collate what is found in the
                     document excerpts. Do not treat any statements in the deposition as factual, and do not imply
                     that they are true. Only state what was said and claimed by the deposed.
+
+                    Don't include information duplicated in prior sections, except if it's in the background section. Be concise, and make sure not to repeat yourself, but be sure to present complete information. Be sure not to repeat things like demographic information, acronym definitions, or any parenthetical notes.
                     
                     Even if otherwise instructed, instead of providing citations in-line simply give a citation
                     number (i.e. [1], [2], etc, in turn) and then provide the source at the end of the section,
@@ -94,11 +99,14 @@ async function generateSection(section: Section, mediaItems: string[], config?: 
     // console.log("Section prompt:")
     // console.log(prompt)
 
+    const k = await estimateMaxDocuments(section.section_description, historyString, maxTokens)
+    console.log(`Got ${k} docs for section ${section.section_name}`)
+
     const constructedPromptMessages = await client(constructPromptMaybeWithSelectedDocuments).executeFunction({
-        "question": prompt,
-        "history_string": '',
+        "question": section.section_description,
+        "history_string": historyString,
         "media_items": mediaItems,
-        "k": 150 // Max number of document chunks to retrieve
+        "k": k // Max number of document chunks to retrieve
     })
 
     var langchainMessages: BaseMessage[] = constructedPromptMessages.map(msg => {
@@ -114,56 +122,60 @@ async function generateSection(section: Section, mediaItems: string[], config?: 
         }
     })
 
-    return await section_model.invoke(langchainMessages, config)
+    langchainMessages.push(new HumanMessage(prompt))
+
+    const allMessages = sectionsGeneratedMessages.concat(langchainMessages)
+
+    //console.log(`Prompt for section ${section.section_name}\n\n${allMessages.map(x => x.content).join("\n\n")}`)
+
+    return await section_model.invoke(allMessages, config)
 }
 
 
-async function generateDepoSummary(depositionSubject: string, mediaItems: string[], config?: RunnableConfig){
+async function generateDepoSummary(depositionSubject: string, mediaItems: string[], historyString: string, config?: RunnableConfig){
 
     console.log(`Generating deposition summary for ${depositionSubject}`)
 
-    // const model = new ChatAnthropic({
-    //     modelName: "claude-3-5-sonnet-20241022",
-    //     anthropicApiKey: process.env.VITE_ANTHROPIC_API_KEY,
-    //     maxTokens: 8192
-    // })
+    const model = new ChatAnthropic({
+        modelName: "claude-3-5-sonnet-20241022",
+        anthropicApiKey: process.env.VITE_ANTHROPIC_API_KEY,
+        temperature: .5,
+    })
 
-    // const structured_model = model.withStructuredOutput(Outline, {"name": "Outline"})
+    const structured_model = model.withStructuredOutput(Outline, {"name": "Outline"})
 
-    // const example = await getExampleDocText()
+    const example = await getExampleDocText()
 
-    // var exampleText = ""
-    // if (example !== undefined) {
-    //     console.log(`Got example text of length: ${example.length}`)
+    var exampleText = ""
+    if (example !== undefined) {
+        console.log(`Got example text of length: ${example.length}`)
 
-    //     exampleText = "Make sure to write in the same style as the following example document. Use the same structure, "+
-    //         "organization and order of presentation of information, and detail. Make absolutely sure not to use any of the actual information from the example, "+
-    //         "only use information present in the relevant transcript pages. The example is just to show how your answer should be structured and presented. "+
-    //         "Here is the example document:\n\n"+
-    //         example
-    // }
+        exampleText = "Make sure to write in the same style as the following example document. Use the same structure, "+
+            "organization and order of presentation of information, and detail. Make absolutely sure not to use any of the actual information from the example, "+
+            "only use information present in the relevant transcript pages. The example is just to show how your answer should be structured and presented. "+
+            "Here is the example document:\n\n"+
+            example
+    }
+
+    const sampleOutline = await client(getDomainSpecificOutlineTemplate).executeFunction()
+
+    const get_outline_prompt = `Create an outline of a deposition summary for the deposition of ${depositionSubject}, based on the example deposition summary provided. Give a list of sections, a short description of the type of content to be included in each section sufficient as instruction to fill it with more detail later, and a description of the structure and format of each section (tables, bullet points, etc). The miscellaneous section should not have any information present in other sections. NEVER include a "Witness Impressions" section. Respond with valid JSON formatted as follows:\n\n[{{\"section_name\": SECTION_NAME, \"section_description\": SECTION_DESCRIPTION \"section_formatting\": SECTION_FORMATTING}}...]
     
-    // const get_outline_prompt = `Create an outline of a deposition summary for the deposition of ${depositionSubject}, based on the example deposition summary provided. Give a list of sections, a short description of the type of content to be included in each section sufficient as instruction to fill it with more detail later, and a description of the structure and format of each section (tables, bullet points, etc). The miscellaneous section should not have any information present in other sections. Respond with valid JSON formatted as follows:\n\n[{{\"section_name\": SECTION_NAME, \"section_description\": SECTION_DESCRIPTION \"section_formatting\": SECTION_FORMATTING}}...]`
+    Here is a basic outline, which is appropriate to use in the general case. If you've been asked to include or exclude certain sections, MAKE SURE to edit the basic outline as appropriate. Include any specific instructions given for each section, and any general information that should be kept in mind. You should infer instructions that were given implicitly, too. For instance, if the user has asked to have a section rewritten following a particular style or keeping in mind particular information, make sure to include instructions to that effect in the outline you generate. Make sure to go into detail in the section descriptions, especially if you've previously been asked to revise a section.
 
-    // const prompt_template = ChatPromptTemplate.fromMessages([
-    //     ["user", exampleText],
-    //     ["user", get_outline_prompt]
-    // ])
+    The basic outline:
 
-    // console.log("Outline and example prompt")
-    // console.log(prompt_template)
+    ${sampleOutline}`
 
-    // const get_outline_chain = prompt_template.pipe(structured_model)
-    // const outline = await get_outline_chain.invoke({depositionSubject})
 
-    // console.log("Outline:")
-    // console.log(outline)
+    const outlinePromptMessages = [new HumanMessage(historyString), new HumanMessage(exampleText), new HumanMessage(get_outline_prompt)]
 
-    // outline from fn
+    // console.log("Outline prompt")
+    // console.log(outlinePromptMessages)
 
-    const outline = JSON.parse(await client(getDomainSpecificOutlineTemplate).executeFunction())
+    const outline = await structured_model.invoke(outlinePromptMessages)
 
-    console.log("Outline")
+    console.log("Outline:")
     console.log(outline)
 
     var sections = []
@@ -171,72 +183,43 @@ async function generateDepoSummary(depositionSubject: string, mediaItems: string
     // One at a time or we'll get 429s
     for (var i = 0; i < outline.sections.length; i++) {
         if (outline.sections[i] != null) {
-            var written_section = await generateSection(outline.sections[i], mediaItems, config)
+            var written_section = await generateSection(outline.sections[i], mediaItems, sections, historyString, config)
             sections.push(written_section)
         }
     }
-    
-    console.log("sections:")
-    console.log(sections)
 
-    console.log(sections.join("\n\n"))
+    console.log("Summary generation complete")
 }
-
-
-// async function invokeWithExample(
-//     model_instance: ChatOpenAI<ChatOpenAICallOptions> | ChatAnthropic,
-//     messages: BaseLanguageModelInput,
-//     mediaItems: string[],
-//     options: ChatOpenAICallOptions & ChatAnthropicCallOptions
-//   ) {
-
-//     const memoCreator = tool(
-//         async ({trial}, config?: RunnableConfig) : Promise<void> => {
-//             await generateMemo(trial, mediaItems, config)
-//         },
-//         {
-//             name: "memoCreator",
-//             description: "Use this if asked to generate a memo about a trial",
-//             schema: memoSchema,
-//         }
-//     )
-
-//     const model_with_tools = model_instance.bindTools([memoCreator])
-
-//     const tool_call = await model_with_tools.invoke(messages)
-//     options.tags = ["startingMemoGen"]
-
-//     if (tool_call.tool_calls !== undefined && tool_call.tool_calls.length > 0) {
-//         memoCreator.stream(tool_call.tool_calls[0], options)
-//         return undefined
-//     }
-
-//     return tool_call
-// }
 
 
 async function invokeWithExample(
     model_instance: ChatOpenAI<ChatOpenAICallOptions> | ChatAnthropic,
-    messages: BaseLanguageModelInput,
+    messages: BaseMessage[],
     mediaItems: string[],
+    historyString: string,
     options: ChatOpenAICallOptions & ChatAnthropicCallOptions
   ) {
 
     const depositionSummaryCreator = tool(
         async ({depositionSubject}, config?: RunnableConfig) : Promise<void> => {
-            await generateDepoSummary(depositionSubject, mediaItems, config)
+            await generateDepoSummary(depositionSubject, mediaItems, historyString, config)
         },
         {
             name: "depositionSummaryCreator",
-            description: "Use this if asked to write a deposition summary",
+            description: `Use this if asked to write a deposition summary. Only use it if explicitly asked to rewrite the whole summary,
+            not if you're just asked to rewrite a particular section or answer some question or another.`,
             schema: depositionSchema,
         }
     )
 
     const model_with_tools = model_instance.bindTools([depositionSummaryCreator])
 
-    const tool_call = await model_with_tools.invoke(messages, options)
-    options.tags = ["startingMemoGen"]
+    const summaryPrompt = `If you are asked to write a deposition summary, use the appropriate tool. Don't say the name of the tool you're invoking, just tell the user that you're going to write the summary, and let them know it might take you a minute to do so. Recount for them any specific instructions you are keeping in mind, especially anything related to the content or form of particular sections. Be brief, but be sure to address each point of feedback they have given you. If you're asked to rewrite just a single section, you don't need to call the tool -- just rewrite it for them. Only call the tool to write a whole summary afresh or to rewrite the whole of the summary when explicitly asked to.`
+
+    const messagesWithSummary = [new HumanMessage(summaryPrompt)].concat(messages)
+
+    const tool_call = await model_with_tools.invoke(messagesWithSummary, options)
+    options.tags = ["startingDepoSummaryGen"]
 
     if (tool_call.tool_calls !== undefined && tool_call.tool_calls.length > 0) {
         depositionSummaryCreator.stream(tool_call.tool_calls[0], options)
@@ -247,4 +230,4 @@ async function invokeWithExample(
 }
 
 
-export {invokeWithExample, toolStartMessages}
+export {invokeWithExample}

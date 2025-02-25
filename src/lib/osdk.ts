@@ -26,13 +26,13 @@ const debug = () => {
 }
 
 
-type askTrialDataRAGCB = (n: any[], d: any[]) => any;
+type askTrialDataRAGCB = (n: any[], d: any[], historyString: string) => any;
 const askTrialDataRAG = async (question: string, history: OSDKMessage[] , callback: askTrialDataRAGCB) =>  {
   const result = await client(semanticSearchGeneratePrompt).executeFunction({
     "question": question,
     "history": history,
   });
-  callback(result, []);
+  callback(result, [], "");
 };
 
 const estimateMaxDocuments = async (question: string, historyString: string, maxTokens: number) => {
@@ -43,7 +43,7 @@ const estimateMaxDocuments = async (question: string, historyString: string, max
   const questionAndHistory = Math.floor((question.length + historyString.length) / 4)
   const fillTokens = maxTokens - questionAndHistory - bufferSpace
 
-  console.log(`~${fillTokens} available in input context`)
+  console.log(`~${fillTokens} tokens available in input context`)
 
   return Math.floor(fillTokens / tokensPerDoc)
 
@@ -61,7 +61,7 @@ const createPrompt = async (question: string, mediaItems: string[], historyStrin
     "media_items": mediaItems,
     "k": k // Max number of document chunks to retrieve
   });
-  callback(result, mediaItems);
+  callback(result, mediaItems, historyString);
 };
 
 const getAllDocuments = async () : Promise<Document>  =>  {
@@ -138,4 +138,4 @@ const uploadFile= async (name: string, contents: string) => {
     });
 };
 
-export {getAllDocuments, createPrompt, askTrialDataRAG, uploadFile, getUser, debug};
+export {getAllDocuments, createPrompt, askTrialDataRAG, uploadFile, getUser, estimateMaxDocuments, debug};
