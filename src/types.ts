@@ -75,6 +75,7 @@ export type UIProvider = {
   provider: Provider;
   model: string;
   name: string;
+  subtext: string;
   enabled: boolean;
   apiKey: string;
   maxTokens: number;

@@ -53,14 +53,19 @@ export const DropdownSelector: React.FC<ChatInputProps> = ({providers, setProvid
       {isOpen && (
         <div className="dropdown-menu">
           {providers.map(provider => (
-            <label key={provider.id}>
+            <div key={provider.id} className="dds">
+              <div>
+                <label>{provider.name}</label>
+                <div><small>{provider.subtext}</small></div>
+              </div>
+            <div className="right">
               <input 
-                type="checkbox"
-                checked={provider.enabled}
-                onChange={() => handleChange(provider)}
-              />
-              {provider.name}
-            </label>
+                  type="checkbox"
+                  checked={provider.enabled}
+                  onChange={() => handleChange(provider)}
+                />
+                </div>
+            </div>
           ))}
         </div>
       )}
