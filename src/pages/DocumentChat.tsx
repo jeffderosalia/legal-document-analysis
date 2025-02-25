@@ -18,7 +18,9 @@ import { Osdk  } from "@osdk/client";
 import { FileCollection, createChatLog } from "@legal-document-analysis/sdk";
 import {Header} from '../components/Header';
 import { Serialized } from '@langchain/core/load/serializable';
-import { ToolMessage } from '@langchain/core/messages';
+import { AIMessageChunk, ToolMessage } from '@langchain/core/messages';
+import { HandleLLMNewTokenCallbackFields, NewTokenIndices } from '@langchain/core/callbacks/base';
+import { ChatGenerationChunk } from '@langchain/core/outputs';
 
 const DocumentChat: React.FC = () => {
   const [user, setUser] = useState<any>();
@@ -34,9 +36,34 @@ const DocumentChat: React.FC = () => {
   const [messages, setMessages] = useState<MessageGroup[]>([]);
   const [questionCount, setQuestionCount] = useState<number>(0);
   const [providers, setProviders] = useState<UIProvider[]>([
-    { id: 'chatgpt', provider: 'openai', model: 'gpt-4o-2024-11-20', name: 'ChatGPT', enabled: true, apiKey: process.env.VITE_OPENAI_API_KEY || "x" },
-    { id: 'anthropic', provider: 'anthropic', model: 'claude-3-5-sonnet-20241022',name: 'Anthropic', enabled: false, apiKey: process.env.VITE_ANTHROPIC_API_KEY || "x" },
-    { id: 'anthropic_with_example', provider: 'anthropic_with_example', model: 'claude-3-5-sonnet-20241022',name: 'Anthropic + Example Memo', enabled: false, apiKey: process.env.VITE_ANTHROPIC_API_KEY || "x" }
+    { id: 'chatgpt',
+      provider: 'openai',
+      model: 'gpt-4o-2024-11-20',
+      name: 'ChatGPT',
+      enabled: true,
+      apiKey: process.env.VITE_OPENAI_API_KEY || "x",
+      maxTokens: 128000 },
+    { id: 'chatgpt-o1', 
+      provider: 'openai',
+      model: 'o1-2024-12-17',
+      name: 'ChatGPT-o1',
+      enabled: false,
+      apiKey: process.env.VITE_OPENAI_API_KEY || "x",
+      maxTokens: 128000 },
+    { id: 'anthropic',
+      provider: 'anthropic',
+      model: 'claude-3-5-sonnet-20241022',
+      name: 'Anthropic',
+      enabled: false,
+      apiKey: process.env.VITE_ANTHROPIC_API_KEY || "x",
+      maxTokens: 200000 },
+    { id: 'anthropic_with_example',
+      provider: 'anthropic',
+      model: 'claude-3-5-sonnet-20241022',
+      name: 'Anthropic + Example Memo',
+      enabled: false,
+      apiKey: process.env.VITE_ANTHROPIC_API_KEY || "x",
+      maxTokens: 200000 }
   ]);
 
   const actions = [
@@ -56,10 +83,13 @@ const DocumentChat: React.FC = () => {
 
       const historyString = messages.slice(0, -1).map(msg =>
           `USER: ${msg.question.content}
+
           ASSISTANT: ${msg.answers.map(ans => ans.content).join("\n")}`
         ).join("\n\n")
 
-      createPrompt(messages[messages.length - 1].question.content, mediaItems, historyString, sendChatCB);
+      const minTokenCount = Math.min(...providers.map(p => p.maxTokens))
+
+      createPrompt(messages[messages.length - 1].question.content, mediaItems, historyString, minTokenCount, sendChatCB);
     }
   }, [messages, loadingLLM]);
   const fetchDocuments = async (firstTime: boolean = false) => {
@@ -179,12 +209,11 @@ const DocumentChat: React.FC = () => {
     );
   };
 
-  const sendChatCB = useCallback(async (question: Message[], mediaItems: string[]) => {
+  const sendChatCB = useCallback(async (question: Message[], mediaItems: string[], historyString: string) => {
     console.log("sendChatCB messages at start:", messages);
     setLoadingLLM(false);
     const enabledProviders = providers.filter(p => p.enabled);
     const allMessages = [...question];
-    allMessages[0].content += "\nCreate all tables using markdown";
     console.log("allMessages");
     console.log(allMessages);
   
@@ -192,11 +221,33 @@ const DocumentChat: React.FC = () => {
       let fullResponse = '';
 
       const writeToChat = (token: string) => {
-        console.log('writeToChat')
+        //console.log('writeToChat')
         fullResponse += token;
         const newMessages = [...messages];
         newMessages[newMessages.length-1].answers[index].content = fullResponse;
         setMessages(newMessages);
+      }
+
+      const onToken = (
+        token: string,
+        _idx: NewTokenIndices,
+        _runId: string,
+        _parentRunId?: string | undefined,
+        _tags?: string[] | undefined,
+        fields?: HandleLLMNewTokenCallbackFields | undefined) => {
+
+          if (fields?.chunk) {
+            const chunkAsChatChunk = fields.chunk as ChatGenerationChunk
+            const chatMessage = chunkAsChatChunk.message as AIMessageChunk
+
+            if ((chatMessage.tool_calls !== undefined && chatMessage.tool_calls.length > 0) ||
+                (chatMessage.tool_call_chunks !== undefined && chatMessage.tool_call_chunks.length > 0)) {
+              console.log(`Tool call detected, not rendering token: ${token}`)
+              return undefined
+            }
+          }
+
+        writeToChat(token)
       }
 
       const saveMessage = () => {
@@ -205,21 +256,29 @@ const DocumentChat: React.FC = () => {
           storeChatMessage(messages[messages.length-1])
         }
       }
+
+      const onComplete = () => {
+        writeToChat("\n\n")
+        saveMessage()
+      }
+
       const onError = () => {
         fullResponse += "Unexpected error at the provider. Try again later.";
         const newMessages = [...messages];
         newMessages[newMessages.length-1].answers[index].content = fullResponse;
         setMessages(newMessages);
       }
+
       const onToolStart = (
         _tool: Serialized,
         _input: string,
         _runId: string,
         _parentRunId: string,
         tags: string[]) => {
-        console.log("tool started")
-        console.log(tags)
+          console.log("tool started")
+          console.log(tags)
       };
+
       const onToolEnd = (
         _output: ToolMessage,
         _runId: string,
@@ -229,22 +288,22 @@ const DocumentChat: React.FC = () => {
           saveMessage()
       };
 
-
       if (p.provider === 'anthropic_with_example')
       {
-        await chat(p.provider, p.model, allMessages, mediaItems, p.apiKey, {
+        await chat(p, allMessages, mediaItems, p.apiKey, historyString, {
           streaming: true,
-          onToken: writeToChat,
+          onToken: onToken,
+          onComplete: onComplete,
           onError: onError,
           onToolStart: onToolStart,
           onToolEnd: onToolEnd
         });
   
-      }else {
-        await chat(p.provider, p.model, allMessages, mediaItems, p.apiKey, {
+      } else {
+        await chat(p, allMessages, mediaItems, p.apiKey, historyString, {
           streaming: true,
-          onToken: writeToChat,
-          onComplete: saveMessage,
+          onToken: onToken,
+          onComplete: onComplete,
           onError: onError
         });
       }

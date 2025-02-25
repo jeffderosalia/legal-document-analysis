@@ -1,15 +1,14 @@
 import { ChatOpenAI, ChatOpenAICallOptions } from "@langchain/openai";
 import { ChatAnthropic, ChatAnthropicCallOptions } from "@langchain/anthropic";
 import { 
-  HumanMessage, 
-  SystemMessage, 
+  HumanMessage,
   AIMessage,
   BaseMessage, 
   AIMessageChunk,
   ToolMessage,
 } from "@langchain/core/messages";
-import { BaseCallbackHandler } from "@langchain/core/callbacks/base";
-import { StreamingCallback, StreamingCallbackEnd, StreamingError, Provider, Message, ChatOptions, ToolCallbackStart, ToolCallbackEnd  } from "../types";
+import { BaseCallbackHandler, HandleLLMNewTokenCallbackFields, NewTokenIndices } from "@langchain/core/callbacks/base";
+import { StreamingCallback, StreamingCallbackEnd, StreamingError, Message, ChatOptions, ToolCallbackStart, ToolCallbackEnd, UIProvider  } from "../types";
 import { invokeWithExample } from "./gen_with_example";
 import { BaseLanguageModelInput } from "@langchain/core/language_models/base";
 import { Serialized } from "@langchain/core/load/serializable";
@@ -27,19 +26,30 @@ class StreamingHandler extends BaseCallbackHandler {
       super();
     }
   
-    async handleLLMNewToken(token: string) {
-      this.onToken(token);
+    async handleLLMNewToken(
+      token: string,
+      idx: NewTokenIndices,
+      runId: string,
+      parentRunId?: string | undefined,
+      tags?: string[] | undefined,
+      fields?: HandleLLMNewTokenCallbackFields | undefined) {
+        this.onToken(token, idx, runId, parentRunId, tags, fields);
     }
+
     async handleLLMStart(): Promise<void> {}
+
     async handleLLMEnd(): Promise<void> {
       if (this.onComplete) this.onComplete();
-    }   
+    }
+
     async handleLLMError(error: Error): Promise<void> {
       if (this.onError) this.onError(error);
     }
+
     async handleChainStart(): Promise<void> {}
     async handleChainEnd(): Promise<void> {}
     async handleChainError(): Promise<void> {}
+
     async handleToolStart(
       tool: Serialized,
       input: string,
@@ -51,6 +61,7 @@ class StreamingHandler extends BaseCallbackHandler {
           this.onToolStart(tool, input, runId, parentRunId, tags)
         }
     }
+
     async handleToolEnd(
       output: ToolMessage,
       runId: string,
@@ -64,6 +75,7 @@ class StreamingHandler extends BaseCallbackHandler {
           this.onToolEnd(output, runId, parentRunId, tags)
         }
     }
+
     async handleToolError(error: Error): Promise<void> {
       console.log('handleToolError');
       if (this.onError) this.onError(error);
@@ -80,16 +92,16 @@ async function basic_invoke(
 }
 
 export async function chat(
-  provider: Provider,
-  model: string,
+  uiProvider: UIProvider,
   messages: Message[],
   mediaItems: string[],
   apiKey: string,
+  historyString: string,
   options: ChatOptions = {}
 ) {
   const { 
     streaming = false, 
-    temperature = 1, 
+    temperature = .75,
     onToken,
     onComplete,
     onError,
@@ -101,7 +113,7 @@ export async function chat(
   var langchainMessages: BaseMessage[] = messages.map(msg => {
     switch (msg.role) {
       case "system":
-        return new SystemMessage(msg.content);
+        return new HumanMessage(msg.content);
       case "user":
         return new HumanMessage(msg.content);
       case "assistant":
@@ -112,15 +124,15 @@ export async function chat(
   });
 
   // Setup model based on provider, note that anything not "openai" falls through to Anthropic
-  const model_instance = provider === "openai" 
+  const model_instance = uiProvider.provider === "openai"
     ? new ChatOpenAI({
-        modelName: model,
+        modelName: uiProvider.model,
         streaming,
         temperature,
         openAIApiKey: apiKey,
       })
     : new ChatAnthropic({
-        modelName: model,
+        modelName: uiProvider.model,
         streaming,
         temperature,
         anthropicApiKey: apiKey,
@@ -132,22 +144,17 @@ export async function chat(
     ? [new StreamingHandler(onToken, onComplete, onError, onToolStart, onToolEnd)]
     : undefined;
 
-  const isNotFirstMessage = !messages.some(msg => msg.content.includes("Here is the history of your conversation up until now"))
-
   try {
-    if (provider === "anthropic_with_example" && isNotFirstMessage){
-      const response = await invokeWithExample(model_instance, langchainMessages, mediaItems, { callbacks });
-      console.log("Complete doc:")
-      console.log(response)
+    if (uiProvider.id === "anthropic_with_example"){
+      const response = await invokeWithExample(model_instance, langchainMessages, mediaItems, historyString, { callbacks });
       return response?.content;
     } else {
-      console.log('allMessages', langchainMessages)
-
+      //console.log('allMessages', langchainMessages)
       const response = await basic_invoke(model_instance, langchainMessages, { callbacks });
       return response.content;
     }
   } catch (error) {
-    console.error(`Error with ${provider}:`, error);
+    console.error(`Error with ${uiProvider.id}:`, error);
     //throw error;
   }
 };

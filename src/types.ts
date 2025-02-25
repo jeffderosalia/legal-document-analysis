@@ -1,3 +1,4 @@
+import { HandleLLMNewTokenCallbackFields, NewTokenIndices } from "@langchain/core/callbacks/base";
 import { Serialized } from "@langchain/core/load/serializable";
 import { ToolMessage } from "@langchain/core/messages";
 
@@ -11,10 +12,19 @@ export interface Document {
 export interface DocumentNode extends Document {
   children: DocumentNode[];
 }
-export type Provider = "openai" | "anthropic" | "anthropic_with_example";
+export type Provider = "openai" | "openai-o1" | "anthropic" | "anthropic_with_example";
 
-export type StreamingCallback = (token: string) => void;
+
+export type StreamingCallback = (
+  token: string,
+  idx: NewTokenIndices,
+  runId: string,
+  parentRunId?: string | undefined,
+  tags?: string[] | undefined,
+  fields?: HandleLLMNewTokenCallbackFields | undefined) => void;
+
 export type StreamingCallbackEnd = () => void;
+
 export type StreamingError = (error: Error) => void;
 
 export type ToolCallbackStart = (
@@ -23,6 +33,7 @@ export type ToolCallbackStart = (
   runId: string,
   parentRunId: string,
   tags: string[]) => void;
+
 export type ToolCallbackEnd = (
   output: ToolMessage,
   runId: string,
@@ -60,10 +71,11 @@ export interface ChatOptions {
 }
 
 export type UIProvider = {
-  id: 'chatgpt' | 'anthropic' | 'anthropic_with_example';
+  id: 'chatgpt' | 'chatgpt-o1' | 'anthropic' | 'anthropic_with_example';
   provider: Provider;
   model: string;
   name: string;
   enabled: boolean;
   apiKey: string;
+  maxTokens: number;
 }
