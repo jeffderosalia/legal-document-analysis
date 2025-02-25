@@ -11,6 +11,7 @@ import {GearMenu } from '../components/GearMenu'
 import { createPrompt, getAllDocuments, getUser } from '../lib/osdk';
 import { createCollection, getFileCollection, deleteCollection } from '../lib/osdkCollections';
 import {uploadMedia} from '../lib/osdkMedia';
+import {allProviders} from '../lib/providers';
 import { addToChat, getChatLog } from '../lib/osdkChatLog';
 import { chat } from '../lib/llmclient';
 import { Document, Message, MessageGroup, UIProvider } from '../types';
@@ -35,48 +36,7 @@ const DocumentChat: React.FC = () => {
   const [loadingLLM, setLoadingLLM] = useState<Boolean>(false);
   const [messages, setMessages] = useState<MessageGroup[]>([]);
   const [questionCount, setQuestionCount] = useState<number>(0);
-  const [providers, setProviders] = useState<UIProvider[]>([
-    { id: 'chatgpt',
-      provider: 'openai',
-      model: 'gpt-4o-2024-11-20',
-      name: 'ChatGPT 4o',
-      subtext: 'Intelligent model',
-      enabled: true,
-      apiKey: process.env.VITE_OPENAI_API_KEY || "x",
-      maxTokens: 128000 },
-    { id: 'chatgpt-o1', 
-      provider: 'openai',
-      model: 'o1-2024-12-17',
-      name: 'ChatGPT o1',
-      subtext: 'Advanced reasoning model',
-      enabled: false,
-      apiKey: process.env.VITE_OPENAI_API_KEY || "x",
-      maxTokens: 128000 },
-    { id: 'anthropic35',
-      provider: 'anthropic',
-      model: 'claude-3-5-sonnet-20241022',
-      name: 'Anthropic 3.5 Sonnet',
-      subtext: 'Intelligent model',
-      enabled: false,
-      apiKey: process.env.VITE_ANTHROPIC_API_KEY || "x",
-      maxTokens: 200000 },
-    { id: 'anthropic37',
-      provider: 'anthropic',
-      model: 'claude-3-7-sonnet-20250219',
-      name: 'Anthropic 3.7 Sonnet',
-      subtext: 'Hybrid reasoning model',
-      enabled: false,
-      apiKey: process.env.VITE_ANTHROPIC_API_KEY || "x",
-      maxTokens: 200000 },
-    { id: 'anthropic_with_example',
-      provider: 'anthropic',
-      model: 'claude-3-5-sonnet-20241022',
-      name: 'Anthropic 3.5 Sonnet for Memos',
-      subtext: 'Intelligent model',
-      enabled: false,
-      apiKey: process.env.VITE_ANTHROPIC_API_KEY || "x",
-      maxTokens: 200000 }
-  ]);
+  const [providers, setProviders] = useState<UIProvider[]>(allProviders);
 
   const actions = [
     { 
@@ -300,12 +260,11 @@ const DocumentChat: React.FC = () => {
           saveMessage()
       };
 
-      if (p.id === 'anthropic_with_example')
+      if (p.useTool)
       {
         await chat(p, allMessages, mediaItems, p.apiKey, historyString, {
           streaming: true,
           onToken: onToken,
-          onComplete: onComplete,
           onError: onError,
           onToolStart: onToolStart,
           onToolEnd: onToolEnd

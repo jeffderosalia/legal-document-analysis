@@ -142,7 +142,7 @@ export async function chat(
     : undefined;
 
   try {
-    if (uiProvider.id === "anthropic_with_example"){
+    if (uiProvider.useTool){
       const response = await invokeWithExample(model_instance, langchainMessages, mediaItems, historyString, { callbacks });
       return response?.content;
     } else {

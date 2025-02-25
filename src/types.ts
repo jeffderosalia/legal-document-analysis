@@ -79,4 +79,5 @@ export type UIProvider = {
   enabled: boolean;
   apiKey: string;
   maxTokens: number;
+  useTool: boolean;
 }
