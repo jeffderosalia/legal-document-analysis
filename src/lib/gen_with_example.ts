@@ -71,7 +71,7 @@ async function generateSection(section: Section, mediaItems: string[], sectionsS
                     Write the summary at a PhD level.
 
                     Make sure to format your answer with markdown, 
-                    and make sure to ALWAYS lead with a new paragraph (separated with some white space)
+                    and make sure to ALWAYS lead with a new paragraph (separated with some newline white space)
                     followed by the section name (${section.section_name})
                     as the heading. Always end with two newlines.
                     Do not offer any editorial opinion or analysis, and do not include any sort of

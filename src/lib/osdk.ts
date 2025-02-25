@@ -37,7 +37,7 @@ const askTrialDataRAG = async (question: string, history: OSDKMessage[] , callba
 
 const estimateMaxDocuments = async (question: string, historyString: string, maxTokens: number) => {
 
-  const bufferSpace = 10000
+  const bufferSpace = 50000
   const tokensPerDoc = 700 // pure guesswork
 
   const questionAndHistory = Math.floor((question.length + historyString.length) / 4)
