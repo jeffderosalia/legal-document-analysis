@@ -71,7 +71,7 @@ async function generateSection(section: Section, mediaItems: string[], sectionsS
                     Write the summary at a PhD level.
 
                     Make sure to format your answer with markdown, 
-                    and make sure to ALWAYS lead with a new paragraph (separated with some newline white space)
+                    and make sure to ALWAYS lead with a new paragraph (separated with at least two newlines of white space)
                     followed by the section name (${section.section_name})
                     as the heading. Always end with two newlines.
                     Do not offer any editorial opinion or analysis, and do not include any sort of
@@ -79,7 +79,17 @@ async function generateSection(section: Section, mediaItems: string[], sectionsS
                     document excerpts. Do not treat any statements in the deposition as factual, and do not imply
                     that they are true. Only state what was said and claimed by the deposed.
 
-                    Don't include information duplicated in prior sections, except if it's in the background section. Be concise, and make sure not to repeat yourself, but be sure to present complete information. Be sure not to repeat things like demographic information, acronym definitions, or any parenthetical notes.
+                    Always use precise language. Do not vacillate or hedge. If there is any ambiguity, point it out and present the reasons for it. Do not try to explain or justify the ambiguity, just present the sources of it.
+
+                    If there is conflicting information, don't attempt to synthesize it. Just explain each place the information is found, quoting it if appropriate. It is important to know where the conflicts are, but not to resolve them.
+
+                    Use quotations from the sources whenever specific information has been asked for, or whenever else it is appropriate. Any key statements should be quoted.
+
+                    If some feedback was given on how to generate a particular section, make sure to follow it.
+
+                    If you're regenerating a section that has been written before, try to keep to the same wording unless the instructions for that section changed, or if you have new information.
+
+                    Don't include information duplicated in prior sections, except if it's in the background section. Be concise, and make sure not to repeat yourself, but be sure to present complete information. MAKE SURE not to repeat things like demographic information, acronym definitions, or any parenthetical notes.
                     
                     Even if otherwise instructed, instead of providing citations in-line simply give a citation
                     number (i.e. [1], [2], etc, in turn) and then provide the source at the end of the section,
@@ -161,7 +171,7 @@ async function generateDepoSummary(depositionSubject: string, mediaItems: string
 
     const sampleOutline = await client(getDomainSpecificOutlineTemplate).executeFunction()
 
-    const get_outline_prompt = `Create an outline of a deposition summary for the deposition of ${depositionSubject}, based on the example deposition summary provided. Give a list of sections, a short description of the type of content to be included in each section sufficient as instruction to fill it with more detail later, and a description of the structure and format of each section (tables, bullet points, etc). The miscellaneous section should not have any information present in other sections. NEVER include a "Witness Impressions" section. Respond with valid JSON formatted as follows:\n\n[{{\"section_name\": SECTION_NAME, \"section_description\": SECTION_DESCRIPTION \"section_formatting\": SECTION_FORMATTING}}...]
+    const get_outline_prompt = `Create an outline of a deposition summary for the deposition of ${depositionSubject}, based on the example deposition summary provided. Give a list of sections, a short description of the type of content to be included in each section sufficient as instruction to fill it with more detail later, and a description of the structure and format of each section (tables, bullet points, etc). The miscellaneous section should not have any information present in other sections. NEVER include a "Witness Impressions" section. There is also no need for a table of depositions, since you are only summarizing a single one. Respond with valid JSON formatted as follows:\n\n[{{\"section_name\": SECTION_NAME, \"section_description\": SECTION_DESCRIPTION \"section_formatting\": SECTION_FORMATTING}}...]
     
     Here is a basic outline, which is appropriate to use in the general case. If you've been asked to include or exclude certain sections, MAKE SURE to edit the basic outline as appropriate. Include any specific instructions given for each section, and any general information that should be kept in mind. You should infer instructions that were given implicitly, too. For instance, if the user has asked to have a section rewritten following a particular style or keeping in mind particular information, make sure to include instructions to that effect in the outline you generate. Make sure to go into detail in the section descriptions, especially if you've previously been asked to revise a section.
 
