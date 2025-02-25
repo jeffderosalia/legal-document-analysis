@@ -35,12 +35,31 @@ const askTrialDataRAG = async (question: string, history: OSDKMessage[] , callba
   callback(result, []);
 };
 
-const createPrompt = async (question: string, mediaItems: string[], historyString: string, callback: askTrialDataRAGCB) => {
+const estimateMaxDocuments = async (question: string, historyString: string, maxTokens: number) => {
+
+  const bufferSpace = 5000
+  const tokensPerDoc = 650 // pure guesswork
+
+  const questionAndHistory = Math.floor((question.length + historyString.length) / 4)
+  const fillTokens = maxTokens - questionAndHistory - bufferSpace
+
+  console.log(`~${fillTokens} available in input context`)
+
+  return Math.floor(fillTokens / tokensPerDoc)
+
+}
+
+const createPrompt = async (question: string, mediaItems: string[], historyString: string, maxTokens: number, callback: askTrialDataRAGCB) => {
+
+  const k = await estimateMaxDocuments(question, historyString, maxTokens)
+
+  console.log(`Retrieving ${k} chunks`)
+
   const result = await client(constructPromptMaybeWithSelectedDocuments).executeFunction({
     "question": question,
     "history_string": historyString,
     "media_items": mediaItems,
-    "k": 100 // Max number of document chunks to retrieve
+    "k": k // Max number of document chunks to retrieve
   });
   callback(result, mediaItems);
 };

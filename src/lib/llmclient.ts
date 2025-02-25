@@ -9,7 +9,7 @@ import {
   ToolMessage,
 } from "@langchain/core/messages";
 import { BaseCallbackHandler, HandleLLMNewTokenCallbackFields, NewTokenIndices } from "@langchain/core/callbacks/base";
-import { StreamingCallback, StreamingCallbackEnd, StreamingError, Provider, Message, ChatOptions, ToolCallbackStart, ToolCallbackEnd  } from "../types";
+import { StreamingCallback, StreamingCallbackEnd, StreamingError, Provider, Message, ChatOptions, ToolCallbackStart, ToolCallbackEnd, UIProvider  } from "../types";
 import { invokeWithExample } from "./gen_with_example";
 import { BaseLanguageModelInput } from "@langchain/core/language_models/base";
 import { Serialized } from "@langchain/core/load/serializable";
@@ -93,8 +93,7 @@ async function basic_invoke(
 }
 
 export async function chat(
-  provider: Provider,
-  model: string,
+  uiProvider: UIProvider,
   messages: Message[],
   mediaItems: string[],
   apiKey: string,
@@ -114,7 +113,7 @@ export async function chat(
   var langchainMessages: BaseMessage[] = messages.map(msg => {
     switch (msg.role) {
       case "system":
-        return new SystemMessage(msg.content);
+        return new HumanMessage(msg.content);
       case "user":
         return new HumanMessage(msg.content);
       case "assistant":
@@ -125,15 +124,15 @@ export async function chat(
   });
 
   // Setup model based on provider, note that anything not "openai" falls through to Anthropic
-  const model_instance = provider === "openai" 
+  const model_instance = uiProvider.provider === "openai"
     ? new ChatOpenAI({
-        modelName: model,
+        modelName: uiProvider.model,
         streaming,
         temperature,
         openAIApiKey: apiKey,
       })
     : new ChatAnthropic({
-        modelName: model,
+        modelName: uiProvider.model,
         streaming,
         temperature,
         anthropicApiKey: apiKey,
@@ -146,7 +145,7 @@ export async function chat(
     : undefined;
 
   try {
-    if (provider === "anthropic_with_example"){
+    if (uiProvider.id === "anthropic_with_example"){
       const response = await invokeWithExample(model_instance, langchainMessages, mediaItems, { callbacks });
       console.log("Complete doc:")
       console.log(response)
@@ -158,7 +157,7 @@ export async function chat(
       return response.content;
     }
   } catch (error) {
-    console.error(`Error with ${provider}:`, error);
+    console.error(`Error with ${uiProvider.id}:`, error);
     //throw error;
   }
 };

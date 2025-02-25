@@ -36,9 +36,34 @@ const DocumentChat: React.FC = () => {
   const [messages, setMessages] = useState<MessageGroup[]>([]);
   const [questionCount, setQuestionCount] = useState<number>(0);
   const [providers, setProviders] = useState<UIProvider[]>([
-    { id: 'chatgpt', provider: 'openai', model: 'gpt-4o-2024-11-20', name: 'ChatGPT', enabled: true, apiKey: process.env.VITE_OPENAI_API_KEY || "x" },
-    { id: 'anthropic', provider: 'anthropic', model: 'claude-3-5-sonnet-20241022',name: 'Anthropic', enabled: false, apiKey: process.env.VITE_ANTHROPIC_API_KEY || "x" },
-    { id: 'anthropic_with_example', provider: 'anthropic_with_example', model: 'claude-3-5-sonnet-20241022',name: 'Anthropic + Example Memo', enabled: false, apiKey: process.env.VITE_ANTHROPIC_API_KEY || "x" }
+    { id: 'chatgpt',
+      provider: 'openai',
+      model: 'gpt-4o-2024-11-20',
+      name: 'ChatGPT',
+      enabled: false,
+      apiKey: process.env.VITE_OPENAI_API_KEY || "x",
+      maxTokens: 128000 },
+    { id: 'chatgpt-o1', 
+      provider: 'openai',
+      model: 'o1-2024-12-17',
+      name: 'ChatGPT-o1',
+      enabled: false,
+      apiKey: process.env.VITE_OPENAI_API_KEY || "x",
+      maxTokens: 128000 },
+    { id: 'anthropic',
+      provider: 'anthropic',
+      model: 'claude-3-5-sonnet-20241022',
+      name: 'Anthropic',
+      enabled: false,
+      apiKey: process.env.VITE_ANTHROPIC_API_KEY || "x",
+      maxTokens: 200000 },
+    { id: 'anthropic_with_example',
+      provider: 'anthropic',
+      model: 'claude-3-5-sonnet-20241022',
+      name: 'Anthropic + Example Memo',
+      enabled: true,
+      apiKey: process.env.VITE_ANTHROPIC_API_KEY || "x",
+      maxTokens: 200000 }
   ]);
 
   const actions = [
@@ -61,7 +86,9 @@ const DocumentChat: React.FC = () => {
           ASSISTANT: ${msg.answers.map(ans => ans.content).join("\n")}`
         ).join("\n\n")
 
-      createPrompt(messages[messages.length - 1].question.content, mediaItems, historyString, sendChatCB);
+      const minTokenCount = Math.min(...providers.map(p => p.maxTokens))
+
+      createPrompt(messages[messages.length - 1].question.content, mediaItems, historyString, minTokenCount, sendChatCB);
     }
   }, [messages, loadingLLM]);
   const fetchDocuments = async (firstTime: boolean = false) => {
@@ -257,7 +284,7 @@ const DocumentChat: React.FC = () => {
 
       if (p.provider === 'anthropic_with_example')
       {
-        await chat(p.provider, p.model, allMessages, mediaItems, p.apiKey, {
+        await chat(p, allMessages, mediaItems, p.apiKey, {
           streaming: true,
           onToken: onToken,
           onError: onError,
@@ -265,8 +292,8 @@ const DocumentChat: React.FC = () => {
           onToolEnd: onToolEnd
         });
   
-      }else {
-        await chat(p.provider, p.model, allMessages, mediaItems, p.apiKey, {
+      } else {
+        await chat(p, allMessages, mediaItems, p.apiKey, {
           streaming: true,
           onToken: onToken,
           onComplete: saveMessage,
