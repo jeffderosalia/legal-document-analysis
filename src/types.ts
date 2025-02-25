@@ -78,5 +78,3 @@ export type UIProvider = {
   enabled: boolean;
   apiKey: string;
 }
-
-export const TOOL_USE_PREFIX = "TOOL_CALL_START"

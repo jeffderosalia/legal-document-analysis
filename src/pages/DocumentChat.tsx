@@ -13,7 +13,7 @@ import { createCollection, getFileCollection, deleteCollection } from '../lib/os
 import {uploadMedia} from '../lib/osdkMedia';
 import { addToChat, getChatLog } from '../lib/osdkChatLog';
 import { chat } from '../lib/llmclient';
-import { Document, Message, MessageGroup, TOOL_USE_PREFIX, UIProvider } from '../types';
+import { Document, Message, MessageGroup, UIProvider } from '../types';
 import { Osdk  } from "@osdk/client";
 import { FileCollection, createChatLog } from "@legal-document-analysis/sdk";
 import {Header} from '../components/Header';
@@ -202,10 +202,10 @@ const DocumentChat: React.FC = () => {
 
       const onToken = (
         token: string,
-        idx: NewTokenIndices,
-        runId: string,
-        parentRunId?: string | undefined,
-        tags?: string[] | undefined,
+        _idx: NewTokenIndices,
+        _runId: string,
+        _parentRunId?: string | undefined,
+        _tags?: string[] | undefined,
         fields?: HandleLLMNewTokenCallbackFields | undefined) => {
 
           if (fields?.chunk) {
