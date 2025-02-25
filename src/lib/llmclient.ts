@@ -100,8 +100,7 @@ export async function chat(
   options: ChatOptions = {}
 ) {
   const { 
-    streaming = false, 
-    temperature = 1,
+    streaming = false,
     onToken,
     onComplete,
     onError,
