@@ -101,7 +101,7 @@ export async function chat(
 ) {
   const { 
     streaming = false, 
-    temperature = .75,
+    temperature = 1,
     onToken,
     onComplete,
     onError,
@@ -128,13 +128,11 @@ export async function chat(
     ? new ChatOpenAI({
         modelName: uiProvider.model,
         streaming,
-        temperature,
         openAIApiKey: apiKey,
       })
     : new ChatAnthropic({
         modelName: uiProvider.model,
         streaming,
-        temperature,
         anthropicApiKey: apiKey,
         maxTokens: 8192
       });
