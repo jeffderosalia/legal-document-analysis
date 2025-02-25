@@ -99,7 +99,9 @@ async function generateSection(section: Section, mediaItems: string[], sectionsS
     // console.log("Section prompt:")
     // console.log(prompt)
 
-    const k = await estimateMaxDocuments(section.section_description, historyString, maxTokens)
+    const sectionsSoFarTokens = Math.floor(sectionsGeneratedMessages.map(m => m.content.length).reduce((x, y) => x + y, 0) / 4)
+
+    const k = await estimateMaxDocuments(section.section_description, historyString, maxTokens - sectionsSoFarTokens)
     console.log(`Got ${k} docs for section ${section.section_name}`)
 
     const constructedPromptMessages = await client(constructPromptMaybeWithSelectedDocuments).executeFunction({

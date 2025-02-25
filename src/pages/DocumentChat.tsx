@@ -40,7 +40,7 @@ const DocumentChat: React.FC = () => {
       provider: 'openai',
       model: 'gpt-4o-2024-11-20',
       name: 'ChatGPT',
-      enabled: false,
+      enabled: true,
       apiKey: process.env.VITE_OPENAI_API_KEY || "x",
       maxTokens: 128000 },
     { id: 'chatgpt-o1', 
@@ -61,7 +61,7 @@ const DocumentChat: React.FC = () => {
       provider: 'anthropic',
       model: 'claude-3-5-sonnet-20241022',
       name: 'Anthropic + Example Memo',
-      enabled: true,
+      enabled: false,
       apiKey: process.env.VITE_ANTHROPIC_API_KEY || "x",
       maxTokens: 200000 }
   ]);
