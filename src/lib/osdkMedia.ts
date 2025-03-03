@@ -13,8 +13,8 @@ async function createMedia(file: File): Promise<MediaReference> {
   ).createMediaReference({
       data: file,
       fileName: file.name,
-      objectTypeApi: "MediaObjectTypeApi",
-      propertyTypeApi: "MediaPropertyApi",
+      objectTypeApi: "UploadedMediaObject",
+      propertyTypeApi: "media_item",
   });
 }
 

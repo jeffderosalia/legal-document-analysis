@@ -26,23 +26,42 @@ const debug = () => {
 }
 
 
-type askTrialDataRAGCB = (n: any[], d: any[]) => any;
+type askTrialDataRAGCB = (n: any[], d: any[], historyString: string) => any;
 const askTrialDataRAG = async (question: string, history: OSDKMessage[] , callback: askTrialDataRAGCB) =>  {
   const result = await client(semanticSearchGeneratePrompt).executeFunction({
     "question": question,
     "history": history,
   });
-  callback(result, []);
+  callback(result, [], "");
 };
 
-const createPrompt = async (question: string, mediaItems: string[], historyString: string, callback: askTrialDataRAGCB) => {
+const estimateMaxDocuments = async (question: string, historyString: string, maxTokens: number) => {
+
+  const bufferSpace = 50000
+  const tokensPerDoc = 700 // pure guesswork
+
+  const questionAndHistory = Math.floor((question.length + historyString.length) / 4)
+  const fillTokens = maxTokens - questionAndHistory - bufferSpace
+
+  console.log(`~${fillTokens} tokens available in input context`)
+
+  return Math.floor(fillTokens / tokensPerDoc)
+
+}
+
+const createPrompt = async (question: string, mediaItems: string[], historyString: string, maxTokens: number, callback: askTrialDataRAGCB) => {
+
+  const k = await estimateMaxDocuments(question, historyString, maxTokens)
+
+  console.log(`Retrieving ${k} chunks`)
+
   const result = await client(constructPromptMaybeWithSelectedDocuments).executeFunction({
     "question": question,
     "history_string": historyString,
     "media_items": mediaItems,
-    "k": 100 // Max number of document chunks to retrieve
+    "k": k // Max number of document chunks to retrieve
   });
-  callback(result, mediaItems);
+  callback(result, mediaItems, historyString);
 };
 
 const getAllDocuments = async () : Promise<Document>  =>  {
@@ -119,4 +138,4 @@ const uploadFile= async (name: string, contents: string) => {
     });
 };
 
-export {getAllDocuments, createPrompt, askTrialDataRAG, uploadFile, getUser, debug};
+export {getAllDocuments, createPrompt, askTrialDataRAG, uploadFile, getUser, estimateMaxDocuments, debug};
