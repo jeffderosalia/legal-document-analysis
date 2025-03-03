@@ -22,7 +22,7 @@ import { Serialized } from '@langchain/core/load/serializable';
 import { AIMessageChunk, ToolMessage } from '@langchain/core/messages';
 import { HandleLLMNewTokenCallbackFields, NewTokenIndices } from '@langchain/core/callbacks/base';
 import { ChatGenerationChunk } from '@langchain/core/outputs';
-import { maybeStoreMemories } from '../lib/memory';
+import { getMemories, maybeStoreMemories } from '../lib/memory';
 
 const DocumentChat: React.FC = () => {
   const [user, setUser] = useState<any>();
@@ -223,11 +223,11 @@ const DocumentChat: React.FC = () => {
         writeToChat(token)
       }
 
-      const saveMemory = () => {
+      const saveMemory = async () => {
         const lastMessage = messages[messages.length-1]
         console.log("saveMemory")
         if (index === 0) {
-          const memory = maybeStoreMemories(lastMessage)
+          const memory = await maybeStoreMemories(lastMessage)
           if (memory === undefined) {
             console.log("No memory stored")
           } else {
@@ -244,10 +244,10 @@ const DocumentChat: React.FC = () => {
         }
       }
 
-      const onComplete = () => {
+      const onComplete = async () => {
         writeToChat("\n\n")
         saveMessage()
-        saveMemory()
+        await saveMemory()
       }
 
       const onError = () => {
@@ -276,9 +276,11 @@ const DocumentChat: React.FC = () => {
           saveMessage()
       };
 
+      const memories = await getMemories(messages[messages.length-1])
+
       if (p.useTool)
       {
-        await chat(p, allMessages, mediaItems, p.apiKey, historyString, {
+        await chat(p, allMessages, mediaItems, p.apiKey, historyString, memories, {
           streaming: true,
           onToken: onToken,
           onError: onError,
@@ -288,7 +290,7 @@ const DocumentChat: React.FC = () => {
         });
   
       } else {
-        await chat(p, allMessages, mediaItems, p.apiKey, historyString, {
+        await chat(p, allMessages, mediaItems, p.apiKey, historyString, memories, {
           streaming: true,
           onToken: onToken,
           onComplete: onComplete,
