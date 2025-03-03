@@ -21,7 +21,7 @@ async function uploadMemory(memory: string): Promise<string | undefined> {
     }
 }
 
-async function maybeGenerateMemory(message: MessageGroup): Promise<string | undefined> {
+async function maybeGenerateMemory(message: MessageGroup, memories: string): Promise<string | undefined> {
 
     const model = new ChatAnthropic({
         modelName: "claude-3-5-sonnet-20241022",
@@ -41,9 +41,15 @@ async function maybeGenerateMemory(message: MessageGroup): Promise<string | unde
 
         If there is nothing in the message you should remember, memory should be null. If your counterparty just asked you to do something general, asked a question, or said something else that's only transiently important, you don't need to remember anything
 
+        If you already have any similar memories, don't repeat them. Here are your memories so far:
+
+        ${memories}
+
         Here is the message you should examine:
 
-        ${message.question.content}`
+        ${message.question.content}
+
+        Now generate the appropriate JSON with any new memories`
 
         const langchainMessages = [new HumanMessage(memoryPrompt)]
 
@@ -70,9 +76,9 @@ async function maybeGenerateMemory(message: MessageGroup): Promise<string | unde
         }
 }
 
-async function maybeStoreMemories(message: MessageGroup): Promise<string | undefined> {
+async function maybeStoreMemories(message: MessageGroup, memories: string): Promise<string | undefined> {
     console.log("Starting memory generation")
-    const generatedMemory = await maybeGenerateMemory(message)
+    const generatedMemory = await maybeGenerateMemory(message, memories)
 
     if (generatedMemory !== undefined) {
         console.log(`Uploading memory`)

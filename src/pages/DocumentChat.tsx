@@ -223,11 +223,11 @@ const DocumentChat: React.FC = () => {
         writeToChat(token)
       }
 
-      const saveMemory = async () => {
+      const saveMemory = async (memories: string) => {
         const lastMessage = messages[messages.length-1]
         console.log("saveMemory")
         if (index === 0) {
-          const memory = await maybeStoreMemories(lastMessage)
+          const memory = await maybeStoreMemories(lastMessage, memories)
           if (memory === undefined) {
             console.log("No memory stored")
           } else {
@@ -297,7 +297,7 @@ const DocumentChat: React.FC = () => {
         });
       }
 
-      await saveMemory()
+      await saveMemory(memories)
 
     }));
   }, [providers, messages]);;
