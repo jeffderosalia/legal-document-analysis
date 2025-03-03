@@ -22,6 +22,7 @@ import { Serialized } from '@langchain/core/load/serializable';
 import { AIMessageChunk, ToolMessage } from '@langchain/core/messages';
 import { HandleLLMNewTokenCallbackFields, NewTokenIndices } from '@langchain/core/callbacks/base';
 import { ChatGenerationChunk } from '@langchain/core/outputs';
+import { maybeStoreMemories } from '../lib/memory';
 
 const DocumentChat: React.FC = () => {
   const [user, setUser] = useState<any>();
@@ -222,16 +223,31 @@ const DocumentChat: React.FC = () => {
         writeToChat(token)
       }
 
+      const saveMemory = () => {
+        const lastMessage = messages[messages.length-1]
+        console.log("saveMemory")
+        if (index === 0) {
+          const memory = maybeStoreMemories(lastMessage)
+          if (memory === undefined) {
+            console.log("No memory stored")
+          } else {
+            console.log(`Stored memory: ${memory}`)
+          }
+        }
+      }
+
       const saveMessage = () => {
         console.log('saveMessage')
         if (index === 0) {
-          storeChatMessage(messages[messages.length-1])
+          const lastMessage = messages[messages.length-1]
+          storeChatMessage(lastMessage)
         }
       }
 
       const onComplete = () => {
         writeToChat("\n\n")
         saveMessage()
+        saveMemory()
       }
 
       const onError = () => {
@@ -266,6 +282,7 @@ const DocumentChat: React.FC = () => {
           streaming: true,
           onToken: onToken,
           onError: onError,
+          onComplete: onComplete,
           onToolStart: onToolStart,
           onToolEnd: onToolEnd
         });

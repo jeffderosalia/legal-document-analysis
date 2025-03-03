@@ -79,9 +79,9 @@ async function generateSection(section: Section, mediaItems: string[], sectionsS
                     document excerpts. Do not treat any statements in the deposition as factual, and do not imply
                     that they are true. Only state what was said and claimed by the deposed.
 
-                    Always use precise language. Do not vacillate or hedge. If there is any ambiguity, point it out and present the reasons for it. Do not try to explain or justify the ambiguity, just present the sources of it.
+                    Always use precise language. Do not vacillate or hedge. If there is any ambiguity, point it out and present the reasons for it. Do not try to explain or justify the ambiguity, just present the sources of it. Make sure to focus on and draw from the actual content of the document, rather than making any assumptions.
 
-                    If there is conflicting information, don't attempt to synthesize it. Just explain each place the information is found, quoting it if appropriate. It is important to know where the conflicts are, but not to resolve them.
+                    If there is conflicting information, don't attempt to synthesize it. Just explain each place the information is found, quoting it if appropriate. It is important to know where the conflicts are, but not to resolve them. You should always explicitly point out any conflicts or contradictory information.
 
                     Use quotations from the sources whenever specific information has been asked for, or whenever else it is appropriate. Any key statements should be quoted.
 
@@ -89,7 +89,9 @@ async function generateSection(section: Section, mediaItems: string[], sectionsS
 
                     If you're regenerating a section that has been written before, try to keep to the same wording unless the instructions for that section changed, or if you have new information.
 
-                    Don't include information duplicated in prior sections, except if it's in the background section. Be concise, and make sure not to repeat yourself, but be sure to present complete information. MAKE SURE not to repeat things like demographic information, acronym definitions, or any parenthetical notes.
+                    Do not give any sort of strategic advice. Focus on precise summarization. 
+
+                    Don't include information duplicated in prior sections, except if it's in the background section. Be concise, and make sure not to repeat yourself, but be sure to present complete information. MAKE SURE to NEVER repeat things like demographic information, acronym definitions, or any parenthetical notes.
                     
                     Even if otherwise instructed, instead of providing citations in-line simply give a citation
                     number (i.e. [1], [2], etc, in turn) and then provide the source at the end of the section,
@@ -149,7 +151,7 @@ async function generateDepoSummary(depositionSubject: string, mediaItems: string
     console.log(`Generating deposition summary for ${depositionSubject}`)
 
     const model = new ChatAnthropic({
-        modelName: "claude-3-5-sonnet-20241022",
+        modelName: "claude-3-7-sonnet-20250219",
         anthropicApiKey: process.env.VITE_ANTHROPIC_API_KEY,
         temperature: .5,
     })
