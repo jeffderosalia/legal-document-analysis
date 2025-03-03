@@ -244,10 +244,9 @@ const DocumentChat: React.FC = () => {
         }
       }
 
-      const onComplete = async () => {
+      const onComplete = () => {
         writeToChat("\n\n")
         saveMessage()
-        await saveMemory()
       }
 
       const onError = () => {
@@ -297,6 +296,8 @@ const DocumentChat: React.FC = () => {
           onError: onError
         });
       }
+
+      await saveMemory()
 
     }));
   }, [providers, messages]);;
