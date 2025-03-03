@@ -40,7 +40,7 @@ const depositionSchema = z.object({
   });
 
 
-async function generateSection(section: Section, mediaItems: string[], sectionsSoFar: AIMessageChunk[], historyString: string, config?: RunnableConfig){
+async function generateSection(section: Section, mediaItems: string[], sectionsSoFar: AIMessageChunk[], historyString: string, memories: string, config?: RunnableConfig){
 
     console.log(`Generating section: ${section.section_name}`)
 
@@ -70,6 +70,9 @@ async function generateSection(section: Section, mediaItems: string[], sectionsS
 
                     Write the summary at a PhD level.
 
+                    Here are some instructions the user has given you in the past. Make sure to follow them:
+                    ${memories}
+
                     Make sure to format your answer with markdown, 
                     and make sure to ALWAYS lead with a new paragraph (separated with at least two newlines of white space)
                     followed by the section name (${section.section_name})
@@ -79,9 +82,9 @@ async function generateSection(section: Section, mediaItems: string[], sectionsS
                     document excerpts. Do not treat any statements in the deposition as factual, and do not imply
                     that they are true. Only state what was said and claimed by the deposed.
 
-                    Always use precise language. Do not vacillate or hedge. If there is any ambiguity, point it out and present the reasons for it. Do not try to explain or justify the ambiguity, just present the sources of it.
+                    Always use precise language. Do not vacillate or hedge. If there is any ambiguity, point it out and present the reasons for it. Do not try to explain or justify the ambiguity, just present the sources of it. Make sure to focus on and draw from the actual content of the document, rather than making any assumptions.
 
-                    If there is conflicting information, don't attempt to synthesize it. Just explain each place the information is found, quoting it if appropriate. It is important to know where the conflicts are, but not to resolve them.
+                    If there is conflicting information, don't attempt to synthesize it. Just explain each place the information is found, quoting it if appropriate. It is important to know where the conflicts are, but not to resolve them. You should always explicitly point out any conflicts or contradictory information.
 
                     Use quotations from the sources whenever specific information has been asked for, or whenever else it is appropriate. Any key statements should be quoted.
 
@@ -89,7 +92,9 @@ async function generateSection(section: Section, mediaItems: string[], sectionsS
 
                     If you're regenerating a section that has been written before, try to keep to the same wording unless the instructions for that section changed, or if you have new information.
 
-                    Don't include information duplicated in prior sections, except if it's in the background section. Be concise, and make sure not to repeat yourself, but be sure to present complete information. MAKE SURE not to repeat things like demographic information, acronym definitions, or any parenthetical notes.
+                    Do not give any sort of strategic advice. Focus on precise summarization.
+
+                    Don't include information duplicated in prior sections, except if it's in the background section. Be concise, and make sure not to repeat yourself, but be sure to present complete information. MAKE SURE to NEVER repeat things like demographic information, acronym definitions, or any parenthetical notes.
                     
                     Even if otherwise instructed, instead of providing citations in-line simply give a citation
                     number (i.e. [1], [2], etc, in turn) and then provide the source at the end of the section,
@@ -144,12 +149,12 @@ async function generateSection(section: Section, mediaItems: string[], sectionsS
 }
 
 
-async function generateDepoSummary(depositionSubject: string, mediaItems: string[], historyString: string, config?: RunnableConfig){
+async function generateDepoSummary(depositionSubject: string, mediaItems: string[], historyString: string, memories: string, config?: RunnableConfig){
 
     console.log(`Generating deposition summary for ${depositionSubject}`)
 
     const model = new ChatAnthropic({
-        modelName: "claude-3-5-sonnet-20241022",
+        modelName: "claude-3-7-sonnet-20250219",
         anthropicApiKey: process.env.VITE_ANTHROPIC_API_KEY,
         temperature: .5,
     })
@@ -172,7 +177,7 @@ async function generateDepoSummary(depositionSubject: string, mediaItems: string
     const sampleOutline = await client(getDomainSpecificOutlineTemplate).executeFunction()
 
     const get_outline_prompt = `Create an outline of a deposition summary for the deposition of ${depositionSubject}, based on the example deposition summary provided. Give a list of sections, a short description of the type of content to be included in each section sufficient as instruction to fill it with more detail later, and a description of the structure and format of each section (tables, bullet points, etc). The miscellaneous section should not have any information present in other sections. NEVER include a "Witness Impressions" section. There is also no need for a table of depositions, since you are only summarizing a single one. Respond with valid JSON formatted as follows:\n\n[{{\"section_name\": SECTION_NAME, \"section_description\": SECTION_DESCRIPTION \"section_formatting\": SECTION_FORMATTING}}...]
-    
+
     Here is a basic outline, which is appropriate to use in the general case. If you've been asked to include or exclude certain sections, MAKE SURE to edit the basic outline as appropriate. Include any specific instructions given for each section, and any general information that should be kept in mind. You should infer instructions that were given implicitly, too. For instance, if the user has asked to have a section rewritten following a particular style or keeping in mind particular information, make sure to include instructions to that effect in the outline you generate. Make sure to go into detail in the section descriptions, especially if you've previously been asked to revise a section.
 
     The basic outline:
@@ -195,7 +200,7 @@ async function generateDepoSummary(depositionSubject: string, mediaItems: string
     // One at a time or we'll get 429s
     for (var i = 0; i < outline.sections.length; i++) {
         if (outline.sections[i] != null) {
-            var written_section = await generateSection(outline.sections[i], mediaItems, sections, historyString, config)
+            var written_section = await generateSection(outline.sections[i], mediaItems, sections, historyString, memories, config)
             sections.push(written_section)
         }
     }
@@ -209,12 +214,13 @@ async function invokeWithExample(
     messages: BaseMessage[],
     mediaItems: string[],
     historyString: string,
+    memories: string,
     options: ChatOpenAICallOptions & ChatAnthropicCallOptions
   ) {
 
     const depositionSummaryCreator = tool(
         async ({depositionSubject}, config?: RunnableConfig) : Promise<void> => {
-            await generateDepoSummary(depositionSubject, mediaItems, historyString, config)
+            await generateDepoSummary(depositionSubject, mediaItems, historyString, memories, config)
         },
         {
             name: "depositionSummaryCreator",
@@ -226,7 +232,10 @@ async function invokeWithExample(
 
     const model_with_tools = model_instance.bindTools([depositionSummaryCreator])
 
-    const summaryPrompt = `If you are asked to write a deposition summary, use the appropriate tool. Don't say the name of the tool you're invoking, just tell the user that you're going to write the summary, and let them know it might take you a minute to do so. Recount for them any specific instructions you are keeping in mind, especially anything related to the content or form of particular sections. Be brief, but be sure to address each point of feedback they have given you. If you're asked to rewrite just a single section, you don't need to call the tool -- just rewrite it for them. Only call the tool to write a whole summary afresh or to rewrite the whole of the summary when explicitly asked to.`
+    const summaryPrompt = `If you are asked to write a deposition summary, use the appropriate tool. Don't say the name of the tool you're invoking, just tell the user that you're going to write the summary, and let them know it might take you a minute to do so. Recount for them any specific instructions you are keeping in mind, especially anything related to the content or form of particular sections. Be brief, but be sure to address each point of feedback they have given you. If you're asked to rewrite just a single section, you don't need to call the tool -- just rewrite it for them. Only call the tool to write a whole summary afresh or to rewrite the whole of the summary when explicitly asked to.
+
+    Here are some instructions the user has given you in the past. Make sure to follow them:
+    ${memories}`
 
     const messagesWithSummary = [new HumanMessage(summaryPrompt)].concat(messages)
 
