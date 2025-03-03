@@ -14,8 +14,8 @@ async function createMedia(file: File): Promise<MediaReference> {
   ).createMediaReference({
       data: file,
       fileName: file.name,      
-      objectTypeApi: "IndexedDocument",
-      propertyTypeApi: "media_item",
+      objectType: IndexedDocument,
+      propertyType: "mediaReference",
   });
 }
 
