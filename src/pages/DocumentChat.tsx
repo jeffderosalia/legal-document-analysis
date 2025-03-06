@@ -7,6 +7,7 @@ import { DropdownSelector } from '../components/DropdownSelector';
 import {CreateCollectionModal} from '../components/CreateCollectionModal'
 import { CollapsibleSection, CollapsibleGroup } from '../components/Collapsible';
 import { DocumentTreeView } from '../components/DocumentTreeView';
+import {DocumentTreePrime} from '../components/DocumentTreePrime'
 // import { ExpandableResizablePanel } from '../components/ExpandableResizablePanel';
 // import {FileUpload} from '../components/FileUpload'
 // import {GearMenu } from '../components/GearMenu'
@@ -95,7 +96,7 @@ const DocumentChat: React.FC = () => {
         ...docs.children || []
       ];
     }
-
+console.log('settings documents', docs.children?.length)
     setDocuments(docs);
   };
   useEffect(() => {
@@ -367,7 +368,8 @@ const DocumentChat: React.FC = () => {
             </CollapsibleSection>
 
             <CollapsibleSection id="docs" title="DocumentSets" className="collections-container">
-                <DocumentTreeView documents={documents} setSelectedDocs={handleSetSelectedDocuments} />
+            <DocumentTreePrime documents={documents} setSelectedDocs={handleSetSelectedDocuments} />
+                {/* <DocumentTreeView /> */}
             </CollapsibleSection>
           </CollapsibleGroup>
 

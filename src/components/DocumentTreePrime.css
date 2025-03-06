@@ -1,0 +1,16 @@
+#fileTree .p-component {
+  font-size: .9rem;
+}
+#fileTree .p-tree {
+  padding: 0;
+  background-color: transparent;
+  border: 0;
+  color: inherit;
+}
+#fileTree .p-treenode-content {
+  padding: 0;
+}
+#fileTree .p-highlight {
+  color: inherit;
+  background: inherit;
+}
