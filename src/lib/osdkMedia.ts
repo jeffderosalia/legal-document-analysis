@@ -1,6 +1,7 @@
 import { __EXPERIMENTAL__NOT_SUPPORTED_YET__createMediaReference } from "@osdk/api/unstable";
 import { MediaReference } from "@osdk/api";
 import { 
+  IndexedDocument,
   createUploadedMediaObject
 } from "@legal-document-analysis/sdk";
 import client from "./client";
@@ -12,9 +13,9 @@ async function createMedia(file: File): Promise<MediaReference> {
       __EXPERIMENTAL__NOT_SUPPORTED_YET__createMediaReference,
   ).createMediaReference({
       data: file,
-      fileName: file.name,
-      objectTypeApi: "UploadedMediaObject",
-      propertyTypeApi: "media_item",
+      fileName: file.name,      
+      objectType: IndexedDocument,
+      propertyType: "mediaReference",
   });
 }
 

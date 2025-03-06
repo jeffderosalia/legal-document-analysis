@@ -97,6 +97,7 @@ export async function chat(
   mediaItems: string[],
   apiKey: string,
   historyString: string,
+  memories: string,
   options: ChatOptions = {}
 ) {
   const { 
@@ -143,7 +144,7 @@ export async function chat(
 
   try {
     if (uiProvider.useTool){
-      const response = await invokeWithExample(model_instance, langchainMessages, mediaItems, historyString, { callbacks });
+      const response = await invokeWithExample(model_instance, langchainMessages, mediaItems, historyString, memories, { callbacks });
       return response?.content;
     } else {
       //console.log('allMessages', langchainMessages)

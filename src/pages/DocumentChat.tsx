@@ -24,6 +24,7 @@ import { Serialized } from '@langchain/core/load/serializable';
 import { AIMessageChunk, ToolMessage } from '@langchain/core/messages';
 import { HandleLLMNewTokenCallbackFields, NewTokenIndices } from '@langchain/core/callbacks/base';
 import { ChatGenerationChunk } from '@langchain/core/outputs';
+import { getMemories, maybeStoreMemories } from '../lib/memory';
 
 const DocumentChat: React.FC = () => {
   const [user, setUser] = useState<any>();
@@ -194,10 +195,24 @@ const DocumentChat: React.FC = () => {
         writeToChat(token)
       }
 
+      const saveMemory = async (memories: string) => {
+        const lastMessage = messages[messages.length-1]
+        console.log("saveMemory")
+        if (index === 0) {
+          const memory = await maybeStoreMemories(lastMessage, memories)
+          if (memory === undefined) {
+            console.log("No memory stored")
+          } else {
+            console.log(`Stored memory: ${memory}`)
+          }
+        }
+      }
+
       const saveMessage = () => {
         console.log('saveMessage');
         if (index === 0) {
-          storeChatMessage(messages[messages.length-1])
+          const lastMessage = messages[messages.length-1]
+          storeChatMessage(lastMessage)
         }
       }
 
@@ -232,24 +247,29 @@ const DocumentChat: React.FC = () => {
           saveMessage()
       };
 
+      const memories = await getMemories(messages[messages.length-1])
+
       if (p.useTool)
       {
-        await chat(p, allMessages, mediaItems, p.apiKey, historyString, {
+        await chat(p, allMessages, mediaItems, p.apiKey, historyString, memories, {
           streaming: true,
           onToken: onToken,
           onError: onError,
+          onComplete: onComplete,
           onToolStart: onToolStart,
           onToolEnd: onToolEnd
         });
   
       } else {
-        await chat(p, allMessages, mediaItems, p.apiKey, historyString, {
+        await chat(p, allMessages, mediaItems, p.apiKey, historyString, memories, {
           streaming: true,
           onToken: onToken,
           onComplete: onComplete,
           onError: onError
         });
       }
+
+      await saveMemory(memories)
 
     }));
   }, [providers, messages]);;
