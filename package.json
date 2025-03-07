@@ -14,7 +14,7 @@
     "@langchain/anthropic": "^0.3.11",
     "@langchain/core": "^0.3.24",
     "@langchain/openai": "^0.3.14",
-    "@legal-document-analysis/sdk": "^0.44.0",
+    "@legal-document-analysis/sdk": "^0.54.0",
     "@osdk/client": "^2.2.0-beta.3",
     "@osdk/foundry": "^2.10.0",
     "@osdk/oauth": "^1.0.1",

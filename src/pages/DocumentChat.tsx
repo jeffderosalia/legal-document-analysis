@@ -23,6 +23,7 @@ import { AIMessageChunk, ToolMessage } from '@langchain/core/messages';
 import { HandleLLMNewTokenCallbackFields, NewTokenIndices } from '@langchain/core/callbacks/base';
 import { ChatGenerationChunk } from '@langchain/core/outputs';
 import { getMemories, maybeStoreMemories } from '../lib/memory';
+import { indexDocument, uploadIndexedDocument } from '../lib/indexDocuments';
 
 const DocumentChat: React.FC = () => {
   const [user, setUser] = useState<any>();
@@ -338,7 +339,8 @@ const DocumentChat: React.FC = () => {
   const handleFileUpload = async (file: File) => {
     await uploadMedia(file)
   };
-  const handleNewChat = () => {
+  const handleNewChat = async () => {
+    const upload_ID = await indexDocument("86ff8c13-73b8-4f7d-bb62-eeb7536249d4", "ri.mio.main.media-item.01956e9a-603e-7ba3-a434-557d471719ed", "TEST")
     setMessages([]);
     setQuestionCount(0);
   }
