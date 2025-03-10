@@ -6,7 +6,6 @@ import { ChatInput } from '../components/ChatInput';
 import { DropdownSelector } from '../components/DropdownSelector';
 import {CreateCollectionModal} from '../components/CreateCollectionModal'
 import { CollapsibleSection, CollapsibleGroup } from '../components/Collapsible';
-import { DocumentTreeView } from '../components/DocumentTreeView';
 import {DocumentTreePrime} from '../components/DocumentTreePrime'
 // import { ExpandableResizablePanel } from '../components/ExpandableResizablePanel';
 // import {FileUpload} from '../components/FileUpload'
@@ -31,7 +30,6 @@ const DocumentChat: React.FC = () => {
   const [user, setUser] = useState<any>();
   const [sidebarOpen, setSidebarOpen] = useState<boolean>(true);
   const [collections, setCollections] = useState<Osdk.Instance<FileCollection>[]>([]);
-  const [documents, setDocuments] = useState<Document>();
   const [recentChats, setRecentChats]= useState<any[]>([])
   const [selectedDocs, setSelectedDocs] = useState<string[]>([]);
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
@@ -64,44 +62,44 @@ const DocumentChat: React.FC = () => {
       createPrompt(messages[messages.length - 1].question.content, selectedDocs, historyString, minTokenCount, sendChatCB);
     }
   }, [messages, loadingLLM]);
-  const fetchDocuments = async (firstTime: boolean = false) => {
-    const [colls, docs] = await Promise.all(
-      [getFileCollection(),getAllDocuments()]
-    );
-    setCollections(colls);
-    const collIds = colls.reduce((acc, obj) => {
-      if (!acc[obj.collectionName||'']) {
-        acc[obj.collectionName||''] = [];
-      }
-      acc[obj.collectionName||''].push(obj.fileRid||'');
-      return acc;
-    }, {} as Record<string, string[]>);
-    console.log(firstTime);
-    const distinctCollections = [...new Set(colls.map(obj => obj.collectionName))]
-      .map(coll => ({
-        id: coll,
-        name: coll,
-        type: 'folder'
-      } as Document));
+//   const fetchDocuments = async (firstTime: boolean = false) => {
+//     const [colls, docs] = await Promise.all(
+//       [getFileCollection(),getAllDocuments()]
+//     );
+//     setCollections(colls);
+//     const collIds = colls.reduce((acc, obj) => {
+//       if (!acc[obj.collectionName||'']) {
+//         acc[obj.collectionName||''] = [];
+//       }
+//       acc[obj.collectionName||''].push(obj.fileRid||'');
+//       return acc;
+//     }, {} as Record<string, string[]>);
+//     console.log(firstTime);
+//     const distinctCollections = [...new Set(colls.map(obj => obj.collectionName))]
+//       .map(coll => ({
+//         id: coll,
+//         name: coll,
+//         type: 'folder'
+//       } as Document));
   
-    distinctCollections.forEach(coll=> {
-      const matching = docs.children?.filter(m=> collIds[coll.name].includes(m.id))
-        docs.children = docs.children?.filter(m=> !collIds[coll.name].includes(m.id))
-      coll.children = matching;
-    });
-    distinctCollections.sort((a: Document, b: Document) => a.name.localeCompare(b.name));
-    if (distinctCollections.length>0) {
-      docs.children = [
-        ...distinctCollections,
-        ...docs.children || []
-      ];
-    }
-console.log('settings documents', docs.children?.length)
-    setDocuments(docs);
-  };
+//     distinctCollections.forEach(coll=> {
+//       const matching = docs.children?.filter(m=> collIds[coll.name].includes(m.id))
+//         docs.children = docs.children?.filter(m=> !collIds[coll.name].includes(m.id))
+//       coll.children = matching;
+//     });
+//     distinctCollections.sort((a: Document, b: Document) => a.name.localeCompare(b.name));
+//     if (distinctCollections.length>0) {
+//       docs.children = [
+//         ...distinctCollections,
+//         ...docs.children || []
+//       ];
+//     }
+// console.log('settings documents', docs.children?.length)
+//     setDocuments(docs);
+//   };
   useEffect(() => {
     const setup = async () => {
-      await fetchDocuments(true);
+      //await fetchDocuments(true);
       const u = await getUser();
       setUser(u);
       const chatLog = await getChatLog(u.id);
@@ -368,8 +366,7 @@ console.log('settings documents', docs.children?.length)
             </CollapsibleSection>
 
             <CollapsibleSection id="docs" title="DocumentSets" className="collections-container">
-            <DocumentTreePrime documents={documents} setSelectedDocs={handleSetSelectedDocuments} />
-                {/* <DocumentTreeView /> */}
+              <DocumentTreePrime selectedDocs={selectedDocs} setSelectedDocs={handleSetSelectedDocuments} />
             </CollapsibleSection>
           </CollapsibleGroup>
 
@@ -382,6 +379,7 @@ console.log('settings documents', docs.children?.length)
         {user && (
         <Header givenName={user.givenName} />
         )}
+        <p className={selectedDocs.length === 0 ? 'alert warn': 'alert success'}>        Selected Docs: {selectedDocs.length}</p>
         <ChatDisplay messages={messages} />
         <ChatInput isDisabled={selectedDocs.length === 0} onSendMessage={handleSendMessage} />
       </div>
