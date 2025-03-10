@@ -1,8 +1,8 @@
 import { __EXPERIMENTAL__NOT_SUPPORTED_YET__createMediaReference } from "@osdk/api/unstable";
 import { MediaReference } from "@osdk/api";
 import { 
-  IndexedDocument,
-  createUploadedMediaObject
+  IndexedDocument
+  //,  createUploadedMediaObject
 } from "@legal-document-analysis/sdk";
 import client from "./client";
 
@@ -27,9 +27,11 @@ async function uploadMedia(file: File) {
     "mediaSetViewRid", mediaReference.reference.mediaSetViewItem.mediaSetViewRid,
   );
 
+  /*
+  The interface changed again.  See api documentation to fix this.
   const result = await client(createUploadedMediaObject).applyAction(
       {
-      "media_item": mediaReference
+      "media_reference": mediaReference
       },
       {
       $returnEdits: true,
@@ -45,6 +47,7 @@ async function uploadMedia(file: File) {
         "mediaSetViewRid", mediaReference.reference.mediaSetViewItem.mediaSetViewRid,
       );
   }
+  */
 }
 
 

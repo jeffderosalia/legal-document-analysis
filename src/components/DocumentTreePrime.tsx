@@ -8,7 +8,6 @@ import { Osdk  } from "@osdk/client";
 import { Folder, FolderPlus, Save } from 'lucide-react';
 
 interface ModalProps {
-  selectedDocs: string[];
   setSelectedDocs: (docs: string[]) => void;
 }
 interface TreeNode {
@@ -22,7 +21,7 @@ interface TreeNode {
   children? : TreeNode[];
 }
 // Generic Modal Component
-export const DocumentTreePrime: React.FC<ModalProps> = ({selectedDocs, setSelectedDocs}) => {
+export const DocumentTreePrime: React.FC<ModalProps> = ({setSelectedDocs}) => {
   const [files, setFiles] = useState<Osdk.Instance<IndexedDocument>[]>();
   const [nodes, setNodes] = useState<any[]>([]);
   const [selectedKeys, setSelectedKeys] = useState<any>([]);

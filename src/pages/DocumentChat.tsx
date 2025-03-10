@@ -4,21 +4,17 @@ import { MessagesSquare, SquarePen, PanelLeft} from 'lucide-react';
 import { ChatDisplay } from '../components/ChatDisplay';
 import { ChatInput } from '../components/ChatInput';
 import { DropdownSelector } from '../components/DropdownSelector';
-import {CreateCollectionModal} from '../components/CreateCollectionModal'
 import { CollapsibleSection, CollapsibleGroup } from '../components/Collapsible';
 import {DocumentTreePrime} from '../components/DocumentTreePrime'
-// import { ExpandableResizablePanel } from '../components/ExpandableResizablePanel';
 // import {FileUpload} from '../components/FileUpload'
 // import {GearMenu } from '../components/GearMenu'
-import { createPrompt, getAllDocuments, getUser } from '../lib/osdk';
-import { createCollection, getFileCollection, deleteCollection } from '../lib/osdkCollections';
-import {uploadMedia} from '../lib/osdkMedia';
-import {allProviders} from '../lib/providers';
+import { createPrompt, getUser } from '../lib/osdk';
+//import { uploadMedia } from '../lib/osdkMedia';
+import { allProviders } from '../lib/providers';
 import { addToChat, getChatLog } from '../lib/osdkChatLog';
 import { chat } from '../lib/llmclient';
-import { Document, Message, MessageGroup, UIProvider } from '../types';
-import { Osdk  } from "@osdk/client";
-import { FileCollection, createChatLog } from "@legal-document-analysis/sdk";
+import { Message, MessageGroup, UIProvider } from '../types';
+import { createChatLog } from "@legal-document-analysis/sdk";
 import {Header} from '../components/Header';
 import { Serialized } from '@langchain/core/load/serializable';
 import { AIMessageChunk, ToolMessage } from '@langchain/core/messages';
@@ -29,25 +25,13 @@ import { getMemories, maybeStoreMemories } from '../lib/memory';
 const DocumentChat: React.FC = () => {
   const [user, setUser] = useState<any>();
   const [sidebarOpen, setSidebarOpen] = useState<boolean>(true);
-  const [collections, setCollections] = useState<Osdk.Instance<FileCollection>[]>([]);
   const [recentChats, setRecentChats]= useState<any[]>([])
   const [selectedDocs, setSelectedDocs] = useState<string[]>([]);
-  const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const [loadingLLM, setLoadingLLM] = useState<Boolean>(false);
   const [messages, setMessages] = useState<MessageGroup[]>([]);
   const [questionCount, setQuestionCount] = useState<number>(0);
   const [providers, setProviders] = useState<UIProvider[]>(allProviders);
 
-  const actions = [
-    { 
-      label: 'Create Collection', 
-      onClick: () => setIsModalOpen(true) 
-    },
-    { 
-      label: 'Upload File', 
-      onClick: () => console.log('delete') 
-    }
-  ];
 
   useEffect(() => {
     if (messages.length > 0 && loadingLLM) {
@@ -62,41 +46,7 @@ const DocumentChat: React.FC = () => {
       createPrompt(messages[messages.length - 1].question.content, selectedDocs, historyString, minTokenCount, sendChatCB);
     }
   }, [messages, loadingLLM]);
-//   const fetchDocuments = async (firstTime: boolean = false) => {
-//     const [colls, docs] = await Promise.all(
-//       [getFileCollection(),getAllDocuments()]
-//     );
-//     setCollections(colls);
-//     const collIds = colls.reduce((acc, obj) => {
-//       if (!acc[obj.collectionName||'']) {
-//         acc[obj.collectionName||''] = [];
-//       }
-//       acc[obj.collectionName||''].push(obj.fileRid||'');
-//       return acc;
-//     }, {} as Record<string, string[]>);
-//     console.log(firstTime);
-//     const distinctCollections = [...new Set(colls.map(obj => obj.collectionName))]
-//       .map(coll => ({
-//         id: coll,
-//         name: coll,
-//         type: 'folder'
-//       } as Document));
-  
-//     distinctCollections.forEach(coll=> {
-//       const matching = docs.children?.filter(m=> collIds[coll.name].includes(m.id))
-//         docs.children = docs.children?.filter(m=> !collIds[coll.name].includes(m.id))
-//       coll.children = matching;
-//     });
-//     distinctCollections.sort((a: Document, b: Document) => a.name.localeCompare(b.name));
-//     if (distinctCollections.length>0) {
-//       docs.children = [
-//         ...distinctCollections,
-//         ...docs.children || []
-//       ];
-//     }
-// console.log('settings documents', docs.children?.length)
-//     setDocuments(docs);
-//   };
+
   useEffect(() => {
     const setup = async () => {
       //await fetchDocuments(true);
@@ -141,18 +91,6 @@ const DocumentChat: React.FC = () => {
       }
     });
   };
-  const handleRemoveFromCollection = async (rid: string, coll: Document) => {
-    const itemToRemove = collections.filter(m=> m.collectionName === coll.name && m.fileRid === rid)
-    if (itemToRemove != null) {
-      //console.log(itemToRemove);
-      await deleteCollection(itemToRemove)
-      await fetchDocuments();
-    }
-    else {
-      console.log('no file to delete')
-    }
-  };
-
   const sendChatCB = useCallback(async (question: Message[], mediaItems: string[], historyString: string) => {
     console.log("sendChatCB messages at start:", messages);
     setLoadingLLM(false);
@@ -254,7 +192,6 @@ const DocumentChat: React.FC = () => {
           streaming: true,
           onToken: onToken,
           onError: onError,
-          onComplete: onComplete,
           onToolStart: onToolStart,
           onToolEnd: onToolEnd
         });
@@ -273,22 +210,10 @@ const DocumentChat: React.FC = () => {
     }));
   }, [providers, messages]);;
 
-  const handleCreateCollection =  (collectioninfo: any) => {
-    console.log(collectioninfo);
-    const create = async () => {
-      const collection = collectioninfo.documents.map((m: Document)=> ({
-        collection_name: collectioninfo.name,
-        file_rid: m.id
-      }))
-      await createCollection(collection);
-      setSelectedDocs([]);
-      await fetchDocuments();
-    };
-    create();
-  };
+  /*
   const handleFileUpload = async (file: File) => {
     await uploadMedia(file)
-  };
+  };*/
   const handleNewChat = () => {
     setMessages([]);
     setQuestionCount(0);
@@ -350,12 +275,6 @@ const DocumentChat: React.FC = () => {
           <DropdownSelector setProviders={setProviders} providers={providers} />
         </div>  
         <div className="inner">
-          <CreateCollectionModal
-              isOpen={isModalOpen}
-              onClose={() => setIsModalOpen(false)}
-              documents={selectedDocs}
-              onCreateCollection={handleCreateCollection}
-            />
           <CollapsibleGroup defaultOpen='docs'>
             <CollapsibleSection id="chats" title="Recent Chats" className="recent-chats">
                 <ul>
@@ -366,7 +285,7 @@ const DocumentChat: React.FC = () => {
             </CollapsibleSection>
 
             <CollapsibleSection id="docs" title="DocumentSets" className="collections-container">
-              <DocumentTreePrime selectedDocs={selectedDocs} setSelectedDocs={handleSetSelectedDocuments} />
+              <DocumentTreePrime setSelectedDocs={handleSetSelectedDocuments} />
             </CollapsibleSection>
           </CollapsibleGroup>
 
