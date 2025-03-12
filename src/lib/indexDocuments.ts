@@ -6,6 +6,7 @@ import {
   } from "@legal-document-analysis/sdk";
 import client from "./client";
 import { OpenAIEmbeddings } from "@langchain/openai";
+import assert from "assert";
 
 
 async function embedChunk(chunkText: string) {
@@ -63,7 +64,10 @@ async function uploadDocumentChunks(mediaItemRid: string, path: string, textChun
     const paramsSlice = chunkParams.slice(i, i + batchSize)
 
     // The max allowed array length is 1000, so just set it lower
-    paramsSlice[0].chunk_embedding.length = 2
+    if( !(paramsSlice[0].chunk_embedding.length == 1536))
+    {
+      throw new Error(`Got embedding of length ${paramsSlice[0].chunk_embedding.length}`)
+    }
 
     const newActions = await client(createUploadedMediaChunk).applyAction(paramsSlice[0], {$validateOnly: false})
 
