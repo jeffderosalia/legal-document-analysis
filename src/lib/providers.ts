@@ -3,7 +3,7 @@ export const allProviders: UIProvider[] =
 [
     { id: 'chatgpt',
         provider: 'openai',
-        model: 'gpt-4o-2024-11-20',
+        model: 'o3-mini-2025-01-31',
         name: 'ChatGPT 4o',
         subtext: 'Intelligent model',
         enabled: true,

@@ -49,7 +49,7 @@ input[type="checkbox"]:checked::after {
 }
 
 .sidebar {
-  width: 256px;
+  width: 400px;
   height: 100vh;
   background: #f3f4f6; /* Light gray */
   color: #333;
@@ -297,4 +297,19 @@ input[type="checkbox"]:checked::after {
   height: 16px;
   width: 16px;
   flex-shrink: 0;
+}
+.alert {
+  margin: 2px auto;
+  padding: 3px 10px;
+  border-radius: 5px;
+
+}
+
+.alert.success{
+  background-color: darkseagreen;
+  color: #FFF;
+}
+.alert.warn {
+  background-color: darkorange;
+  color: #FFF;
 }
